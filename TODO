@@ -1,13 +1,11 @@
 Things to do for iftop
-$Id: TODO,v 1.14 2002/10/29 20:35:05 pdw Exp $
+$Id: TODO,v 1.15 2002/11/04 12:27:35 chris Exp $
 
 * Search for BSD interface names - need to know what to look for.
 
 * IP types other than v4?
 
 * Config file.
-
-* Find someone gullible to sort out autoconf.
 
 * Which average to use for the bar graph? Show several and peaks? Colours?
 
