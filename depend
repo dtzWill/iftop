@@ -1,4 +1,3 @@
-iftop.o: iftop.c iftop.h addr_hash.h hash.h resolver.h ui.h options.h
 addr_hash.o: addr_hash.c addr_hash.h hash.h iftop.h
 hash.o: hash.c hash.h iftop.h
 ns_hash.o: ns_hash.c ns_hash.h hash.h iftop.h
