@@ -2,10 +2,10 @@
 # Makefile:
 # Makefile for iftop.
 #
-# $Id: Makefile,v 1.45 2002/10/25 09:59:02 pdw Exp $
+# $Id: Makefile,v 1.46 2002/10/25 10:48:32 pdw Exp $
 #
 
-VERSION = 0.10pre2
+VERSION = 0.10pre3
 
 # C compiler to use.
 #CC = gcc
