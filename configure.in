@@ -7,7 +7,7 @@ dnl things and even once you have you find yourself testing for more and more
 dnl special cases. But that's OK. Paul is going to maintain it :)
 dnl     -- Chris Lightfoot
 dnl
-dnl $Id: configure.in,v 1.23 2004/02/28 18:53:37 pdw Exp $
+dnl $Id: configure.in,v 1.22 2003/11/10 22:06:39 pdw Exp $
 dnl
 
 dnl
@@ -21,7 +21,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(iftop, "0.16")
+AM_INIT_AUTOMAKE(iftop, "0.16pre1")
 
 AC_DEFINE_UNQUOTED(IFTOP_VERSION, "$VERSION", [The iftop version number])
 
