@@ -63,23 +63,14 @@ int screen_line_compare(void* a, void* b) {
 }
 
 void readable_size(float n, char* buf, int bsize, int ksize, int bytes) {
-    if(n >= 100 * ksize * ksize) {
-       snprintf(buf, bsize, " %4.0f%s", n / (ksize * ksize), bytes ? "MB" : "M"); 
-    }
-    else if(n >= 10 * ksize * ksize) {
+    if(n >= ksize * ksize) {
        snprintf(buf, bsize, " %4.1f%s", n / (ksize * ksize), bytes ? "MB" : "M"); 
     }
-    if(n >= ksize * ksize) {
-       snprintf(buf, bsize, " %4.2f%s", n / (ksize * ksize), bytes ? "MB" : "M" ); 
-    }
-    else if(n >= 100 * ksize) {
+    if(n >= 100 * ksize) {
        snprintf(buf, bsize, " %4.0f%s", n / ksize, bytes ? "KB" : "K" ); 
     }
-    else if(n >= 10 * ksize) {
-       snprintf(buf, bsize, " %4.1f%s", n / ksize, bytes ? "KB" : "K" ); 
-    }
     else if(n >= ksize) {
-       snprintf(buf, bsize, " %4.2f%s", n / ksize, bytes ? "KB" : "K" ); 
+       snprintf(buf, bsize, " %4.1f%s", n / ksize, bytes ? "KB" : "K" ); 
     }
     else {
        snprintf(buf, bsize, " %4.0f%s", n, bytes ? "B" : "b"); 
@@ -196,48 +187,9 @@ void screen_data_clear() {
     sorted_list_destroy(&screen_list);
 }
 
-void calculate_totals() {
-    int i;
-
-    /**
-     * Calculate peaks and totals
-     */
-    for(i = 0; i < HISTORY_LENGTH; i++) {
-        int j;
-        int ii = (HISTORY_LENGTH + history_pos - i) % HISTORY_LENGTH;
-
-        for(j = 0; j < HISTORY_DIVISIONS; j++) {
-            if(i < history_divs[j]) {
-                totals.recv[j] += history_totals.recv[ii];
-                totals.sent[j] += history_totals.sent[ii];
-            }
-        }
-
-        if(history_totals.recv[i] > peakrecv) {
-            peakrecv = history_totals.recv[i];
-        }
-        if(history_totals.sent[i] > peaksent) {
-            peaksent = history_totals.sent[i];
-        }
-        if(history_totals.recv[i] + history_totals.sent[i] > peaktotal) {
-            peaktotal = history_totals.recv[i] + history_totals.sent[i];	
-        }
-    }
-}
-
-void make_screen_list() {
-    hash_node_type* n = NULL;
-    while(hash_next_item(screen_hash, &n) == HASH_STATUS_OK) {
-        sorted_list_insert(&screen_list, (host_pair_line*)n->rec);
-    }
-}
-
 void analyse_data() {
     hash_node_type* n = NULL;
-
-    if(options.paused == 1) {
-      return;
-    }
+    int i;
 
     memset(&totals, 0, sizeof totals);
 
@@ -254,11 +206,11 @@ void analyse_data() {
         ap = *(addr_pair*)n->key;
 
         /* Aggregate hosts, if required */
-        if(options.aggregate_src) {
-            ap.src.s_addr = 0;
-        }
-        if(options.aggregate_dest) {
+        if(options.aggregate == OPTION_AGGREGATE_SRC) {
             ap.dst.s_addr = 0;
+        }
+        else if(options.aggregate == OPTION_AGGREGATE_DEST) {
+            ap.src.s_addr = 0;
         }
 
         /* Aggregate ports, if required */
@@ -267,9 +219,6 @@ void analyse_data() {
         }
         if(options.showports == OPTION_PORTS_SRC || options.showports == OPTION_PORTS_OFF) {
             ap.dst_port = 0;
-        }
-        if(options.showports == OPTION_PORTS_OFF) {
-            ap.protocol = 0;
         }
 
 	
@@ -294,11 +243,36 @@ void analyse_data() {
 
     }
 
-    make_screen_list();
-
+    n = NULL;
+    while(hash_next_item(screen_hash, &n) == HASH_STATUS_OK) {
+        sorted_list_insert(&screen_list, (host_pair_line*)n->rec);
+    }
     hash_delete_all(screen_hash);
     
-    calculate_totals();
+    /**
+     * Calculate peaks and totals
+     */
+    for(i = 0; i < HISTORY_LENGTH; i++) {
+        int j;
+        int ii = (HISTORY_LENGTH + history_pos - i) % HISTORY_LENGTH;
+
+        for(j = 0; j < HISTORY_DIVISIONS; j++) {
+            if(i < history_divs[j]) {
+                totals.recv[j] += history_totals.recv[ii];
+                totals.sent[j] += history_totals.sent[ii];
+            }
+        }
+
+        if(history_totals.recv[i] > peakrecv) {
+            peakrecv = history_totals.recv[i];
+        }
+        if(history_totals.sent[i] > peaksent) {
+            peaksent = history_totals.sent[i];
+        }
+        if(history_totals.recv[i] + history_totals.sent[i] > peaktotal) {
+            peaktotal = history_totals.recv[i] + history_totals.sent[i];	
+        }
+    }
 
 }
 
@@ -382,13 +356,13 @@ void ui_print() {
     attron(A_REVERSE);
     addstr(" s ");
     attroff(A_REVERSE);
-    addstr(options.aggregate_src ? " aggregate off "
+    addstr(options.aggregate == OPTION_AGGREGATE_SRC ? " aggregate off "
                          : " aggregate src ");
 
     attron(A_REVERSE);
     addstr(" d ");
     attroff(A_REVERSE);
-    addstr(options.aggregate_dest ? " aggregate off  "
+    addstr(options.aggregate == OPTION_AGGREGATE_DEST ? " aggregate off  "
                          : " aggregate dest ");
 
     draw_bar_scale(&y);
@@ -511,17 +485,23 @@ void ui_loop() {
                 tick(1);
                 break;
 
-	          case 'b':
+	        case 'b':
                 options.showbars = !options.showbars; 
                 tick(1);
                 break;
 
             case 's':
-                options.aggregate_src = !options.aggregate_src;
+                options.aggregate = 
+                    (options.aggregate == OPTION_AGGREGATE_SRC) 
+                    ? OPTION_AGGREGATE_OFF
+                    : OPTION_AGGREGATE_SRC;
                 break;
 
             case 'd':
-                options.aggregate_dest = !options.aggregate_dest;
+                options.aggregate = 
+                    (options.aggregate == OPTION_AGGREGATE_DEST) 
+                    ? OPTION_AGGREGATE_OFF
+                    : OPTION_AGGREGATE_DEST;
                 break;
             case 'S':
                 /* Show source ports */
@@ -559,9 +539,6 @@ void ui_loop() {
                   ? OPTION_PORTS_ON
                   : OPTION_PORTS_OFF;
                 // Don't tick here, otherwise we get a bogus display
-                break;
-            case 'P':
-                options.paused = !options.paused;
                 break;
         }
         tick(0);

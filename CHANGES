@@ -1,15 +1,11 @@
 Change log for iftop
-$Id: CHANGES,v 1.17 2002/10/15 08:55:33 pdw Exp $
+$Id: CHANGES,v 1.13 2002/10/10 14:17:51 pdw Exp $
 
 0.8
 
 Added support for displaying port numbers
-Minor fixes to rate display
+Minor fix to rate display
 Minor fix to netmask handling (specifying /32 was broken)
-Updated RPM spec file 
-    Iain Lea <iain@bricbrac.de>
-Added pause functionality (P)
-Changed behaviour of source/dest traffic aggregation
 
 0.7 02/10/02
 

@@ -25,7 +25,6 @@
 #include "ui.h"
 #include "options.h"
 #include "sll.h"
-#include "threadprof.h"
 
 
 unsigned char if_hw_addr[6];    /* ethernet address of interface. */
@@ -182,7 +181,7 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
          * it was picked up in promisc mode, and account it as incoming.
          */
         else if(iptr->ip_src.s_addr < iptr->ip_dst.s_addr) {
-            assign_addr_pair(&ap, iptr, 1);
+            assign_addr_pair(&ap, iptr, 0);
             direction = 0;
         }
         else {
@@ -227,21 +226,21 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
     ht->last_write = history_pos;
     if(iptr->ip_src.s_addr == ap.src.s_addr) {
         ht->sent[history_pos] += len;
-        ht->total_sent += len;
+    ht->total_sent += len;
     }
     else {
         ht->recv[history_pos] += len;
-        ht->total_recv += len;
+    ht->total_recv += len;
     }
 
     if(direction == 0) {
         /* incoming */
         history_totals.recv[history_pos] += ntohs(iptr->ip_len);
-        history_totals.total_recv += len;
+    history_totals.total_recv += len;
     }
     else {
         history_totals.sent[history_pos] += ntohs(iptr->ip_len);
-        history_totals.total_sent += len;
+    history_totals.total_sent += len;
     }
     
 }
@@ -347,14 +346,9 @@ void packet_init() {
     else if(dlt == DLT_RAW) {
         packet_handler = handle_raw_packet;
     } 
-/* 
- * SLL support not available in older libpcaps
- */
-#ifdef DLT_LINUX_SLL
     else if(dlt == DLT_LINUX_SLL) {
-      packet_handler = handle_cooked_packet;
+	packet_handler = handle_cooked_packet;
     }
-#endif
     else {
         fprintf(stderr, "Unsupported datalink type: %d\n"
                 "Please email pdw@ex-parrot.com, quoting the datalink type and what you were\n"

@@ -64,7 +64,9 @@ hash_status_enum hash_find(hash_type* hash_table, void* key, void **rec) {
    /*******************************
     *  find node containing data  *
     *******************************/
-    p = hash_table->table[hash_table->hash(key)];
+    int bucket = hash_table->hash(key);
+
+    p = hash_table->table[bucket];
 
     while (p && !hash_table->compare(p->key, key))  {
         p = p->next;
