@@ -320,7 +320,7 @@ char *do_resolve(struct in_addr *addr) {
         workerinfo = xmalloc(sizeof *workerinfo);
         pthread_setspecific(worker_key, workerinfo);
         workerinfo->fd = p[0];
-
+        
         switch (workerinfo->child = fork()) {
             case 0:
                 close(p[0]);
@@ -345,6 +345,7 @@ char *do_resolve(struct in_addr *addr) {
         close(workerinfo->fd);
         xfree(workerinfo);
         pthread_setspecific(worker_key, NULL);
+        *name = 0;
     }
     if (!*name)
         return NULL;

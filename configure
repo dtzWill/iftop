@@ -842,9 +842,9 @@ Optional Packages:
   --with-resolver=TYPE    Technique iftop should use for name resolution. Valid
                           options are netdb, netdb_1thread (for systems without
                           working gethostbyaddr_r), ares for the MIT ARES
-                          asynchronous resolver library, forking for the REALLY SUCKY
-                          forking resolver, or none if you don't need any name
-                          resolution.
+                          asynchronous resolver library, forking for the REALLY
+                          SUCKY forking resolver, or none if you don't need any
+                          name resolution.
                           default=netdb
   --with-libpcap=WHERE    Where the libpcap packet-capture library is found.
                           The pcap library should be installed  in WHERE/lib,
@@ -1554,7 +1554,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.15pre4"
+ VERSION="0.15pre5"
 
 
 cat >>confdefs.h <<_ACEOF

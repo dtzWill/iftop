@@ -7,7 +7,7 @@ dnl things and even once you have you find yourself testing for more and more
 dnl special cases. But that's OK. Paul is going to maintain it :)
 dnl     -- Chris Lightfoot
 dnl
-dnl $Id: configure.in,v 1.19 2003/11/06 18:27:14 pdw Exp $
+dnl $Id: configure.in,v 1.21 2003/11/07 01:40:57 pdw Exp $
 dnl
 
 dnl
@@ -21,7 +21,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(iftop, "0.15pre4")
+AM_INIT_AUTOMAKE(iftop, "0.15pre5")
 
 AC_DEFINE_UNQUOTED(IFTOP_VERSION, "$VERSION", [The iftop version number])
 
@@ -37,9 +37,9 @@ AC_ARG_WITH(resolver,
     [  --with-resolver=TYPE    Technique iftop should use for name resolution. Valid
                           options are netdb, netdb_1thread (for systems without
                           working gethostbyaddr_r), ares for the MIT ARES
-                          asynchronous resolver library, forking for the REALLY SUCKY
-                          forking resolver, or none if you don't need any name
-                          resolution.
+                          asynchronous resolver library, forking for the REALLY
+                          SUCKY forking resolver, or none if you don't need any
+                          name resolution.
                           [default=netdb]],
     [resolver=$withval],
     [resolver=netdb])

@@ -23,7 +23,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.5 2003/10/21 22:25:48 pdw Exp $
+# $Id: Makefile.am,v 1.7 2003/11/06 23:37:20 chris Exp $
 #
 SHELL = @SHELL@
 
