@@ -47,6 +47,7 @@ typedef struct {
     int dnsresolution;
     int portresolution;
     int promiscuous;
+    int promiscuous_but_choosy;
     int showbars;
     option_port_t showports;
     int aggregate_src;
@@ -62,6 +63,8 @@ typedef struct {
     int screen_offset;
 
     option_linedisplay_t linedisplay;
+
+    int show_totals;
 
 } options_t;
 

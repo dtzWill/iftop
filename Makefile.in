@@ -23,7 +23,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.1 2002/11/04 12:27:35 chris Exp $
+# $Id: Makefile.am,v 1.2 2003/06/06 22:42:34 pdw Exp $
 #
 SHELL = @SHELL@
 
@@ -69,6 +69,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_alias = @build_alias@
+build_triplet = @build@
+host_alias = @host_alias@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
 
 EXEEXT = @EXEEXT@
 OBJEXT = @OBJEXT@
@@ -92,21 +98,22 @@ sbin_PROGRAMS = iftop
 
 iftop_SOURCES = addr_hash.c edline.c hash.c iftop.c ns_hash.c \
                  options.c resolver.c screenfilter.c serv_hash.c \
-                 sorted_list.c threadprof.c ui.c util.c
+                 sorted_list.c threadprof.c ui.c util.c \
+		 addrs_ioctl.c addrs_dlpi.c dlcommon.c
 
 
 noinst_HEADERS = addr_hash.h ether.h ethertype.h extract.h hash.h iftop.h \
                  integers.h ip.h llc.h ns_hash.h options.h resolver.h \
                  screenfilter.h serv_hash.h sll.h sorted_list.h tcp.h \
-                 threadprof.h token.h ui.h
+                 threadprof.h token.h ui.h dlcommon.h
 
 
 man_MANS = iftop.8
 
 SUBDIRS = config
 
-EXTRA_DIST = bootstrap README CHANGES COPYING INSTALL TODO Makefile.OLD \
-             $(man_MANS) iftop.cat
+EXTRA_DIST = bootstrap README ChangeLog AUTHORS COPYING INSTALL TODO \
+		Makefile.OLD $(man_MANS) iftop.cat
 
 
 MAINTERCLEANFILES = Makefile.in aclocal.m4 configure configuration.h.in \
@@ -124,7 +131,8 @@ am_iftop_OBJECTS = addr_hash.$(OBJEXT) edline.$(OBJEXT) hash.$(OBJEXT) \
 	iftop.$(OBJEXT) ns_hash.$(OBJEXT) options.$(OBJEXT) \
 	resolver.$(OBJEXT) screenfilter.$(OBJEXT) serv_hash.$(OBJEXT) \
 	sorted_list.$(OBJEXT) threadprof.$(OBJEXT) ui.$(OBJEXT) \
-	util.$(OBJEXT)
+	util.$(OBJEXT) addrs_ioctl.$(OBJEXT) addrs_dlpi.$(OBJEXT) \
+	dlcommon.$(OBJEXT)
 iftop_OBJECTS = $(am_iftop_OBJECTS)
 iftop_LDADD = $(LDADD)
 iftop_DEPENDENCIES =
@@ -137,10 +145,13 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/addr_hash.Po ./$(DEPDIR)/edline.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/hash.Po ./$(DEPDIR)/iftop.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ns_hash.Po ./$(DEPDIR)/options.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/resolver.Po ./$(DEPDIR)/screenfilter.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/addr_hash.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/addrs_dlpi.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/addrs_ioctl.Po ./$(DEPDIR)/dlcommon.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/edline.Po ./$(DEPDIR)/hash.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/iftop.Po ./$(DEPDIR)/ns_hash.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/options.Po ./$(DEPDIR)/resolver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/screenfilter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/serv_hash.Po ./$(DEPDIR)/sorted_list.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/threadprof.Po ./$(DEPDIR)/ui.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/util.Po
@@ -160,8 +171,9 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = README $(noinst_HEADERS) COPYING INSTALL Makefile.am \
-	Makefile.in TODO aclocal.m4 config.h.in configure configure.in
+DIST_COMMON = README $(noinst_HEADERS) AUTHORS COPYING ChangeLog \
+	INSTALL Makefile.am Makefile.in NEWS TODO aclocal.m4 \
+	config.h.in configure configure.in
 DIST_SUBDIRS = $(SUBDIRS)
 SOURCES = $(iftop_SOURCES)
 
@@ -238,6 +250,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/addr_hash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/addrs_dlpi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/addrs_ioctl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dlcommon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iftop.Po@am__quote@

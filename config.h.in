@@ -9,6 +9,9 @@
 /* C99 fixed-width int types available */
 #undef HAVE_C99_INTS
 
+/* Are we running on a STREAMS system with DLPI? */
+#undef HAVE_DLPI
+
 /* Define to 1 if you have the `inet_aton' function. */
 #undef HAVE_INET_ATON
 
@@ -83,6 +86,9 @@
 
 /* The iftop version number */
 #undef IFTOP_VERSION
+
+/* Enable default promiscuous mode to capture outgoing packets */
+#undef NEED_PROMISCUOUS_FOR_OUTGOING
 
 /* Name of package */
 #undef PACKAGE

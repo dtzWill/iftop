@@ -1,4 +1,4 @@
-/* @(#) $Header: /home/cvs/iftop/token.h,v 1.1 2002/10/31 16:53:32 pdw Exp $ (LBL) */
+/* @(#) $Header: /home/pdw/vcvs/repos/iftop/token.h,v 1.2 2003/06/06 22:42:35 pdw Exp $ (LBL) */
 /*
  * Copyright (c) 1998, Larry Lile
  * All rights reserved.

@@ -817,6 +817,11 @@ Program names:
   --program-prefix=PREFIX            prepend PREFIX to installed program names
   --program-suffix=SUFFIX            append SUFFIX to installed program names
   --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
+
+System types:
+  --build=BUILD     configure for building on BUILD [guessed]
+  --host=HOST       cross-compile to build programs to run on HOST [BUILD]
+  --target=TARGET   configure for building compilers for TARGET [HOST]
 _ACEOF
 fi
 
@@ -829,6 +834,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
+--enable-default-promiscuous If enabled, iftop will operate in promiscuous mode to capture outgoing packets
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1202,6 +1208,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
 ac_aux_dir=
 for ac_dir in config $srcdir/config; do
   if test -f $ac_dir/install-sh; then
@@ -1226,6 +1233,90 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"
 ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
+
+
+# Make sure we can run config.sub.
+$ac_config_sub sun4 >/dev/null 2>&1 ||
+  { { echo "$as_me:$LINENO: error: cannot run $ac_config_sub" >&5
+echo "$as_me: error: cannot run $ac_config_sub" >&2;}
+   { (exit 1); exit 1; }; }
+
+echo "$as_me:$LINENO: checking build system type" >&5
+echo $ECHO_N "checking build system type... $ECHO_C" >&6
+if test "${ac_cv_build+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_build_alias=$build_alias
+test -z "$ac_cv_build_alias" &&
+  ac_cv_build_alias=`$ac_config_guess`
+test -z "$ac_cv_build_alias" &&
+  { { echo "$as_me:$LINENO: error: cannot guess build type; you must specify one" >&5
+echo "$as_me: error: cannot guess build type; you must specify one" >&2;}
+   { (exit 1); exit 1; }; }
+ac_cv_build=`$ac_config_sub $ac_cv_build_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_build_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_build_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_build" >&5
+echo "${ECHO_T}$ac_cv_build" >&6
+build=$ac_cv_build
+build_cpu=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+build_vendor=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+build_os=`echo $ac_cv_build | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+echo "$as_me:$LINENO: checking host system type" >&5
+echo $ECHO_N "checking host system type... $ECHO_C" >&6
+if test "${ac_cv_host+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_host_alias=$host_alias
+test -z "$ac_cv_host_alias" &&
+  ac_cv_host_alias=$ac_cv_build_alias
+ac_cv_host=`$ac_config_sub $ac_cv_host_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_host_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_host_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_host" >&5
+echo "${ECHO_T}$ac_cv_host" >&6
+host=$ac_cv_host
+host_cpu=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+host_vendor=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+echo "$as_me:$LINENO: checking target system type" >&5
+echo $ECHO_N "checking target system type... $ECHO_C" >&6
+if test "${ac_cv_target+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_target_alias=$target_alias
+test "x$ac_cv_target_alias" = "x" &&
+  ac_cv_target_alias=$ac_cv_host_alias
+ac_cv_target=`$ac_config_sub $ac_cv_target_alias` ||
+  { { echo "$as_me:$LINENO: error: $ac_config_sub $ac_cv_target_alias failed" >&5
+echo "$as_me: error: $ac_config_sub $ac_cv_target_alias failed" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_target" >&5
+echo "${ECHO_T}$ac_cv_target" >&6
+target=$ac_cv_target
+target_cpu=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+target_vendor=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
+target_os=`echo $ac_cv_target | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+
+
+# The aliases save the names the user supplied, while $host etc.
+# will get canonicalized.
+test -n "$target_alias" &&
+  test "$program_prefix$program_suffix$program_transform_name" = \
+    NONENONEs,x,x, &&
+  program_prefix=${target_alias}-
 
 # Add the stamp file to the list of files AC keeps track of,
 # along with our hook.
@@ -1462,7 +1553,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.12pre1"
+ VERSION="0.13"
 
 
 cat >>confdefs.h <<_ACEOF
@@ -3346,6 +3437,118 @@ fi
 
 
 
+if test "${ac_cv_header_sys_dlpi_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for sys/dlpi.h" >&5
+echo $ECHO_N "checking for sys/dlpi.h... $ECHO_C" >&6
+if test "${ac_cv_header_sys_dlpi_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_sys_dlpi_h" >&5
+echo "${ECHO_T}$ac_cv_header_sys_dlpi_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking sys/dlpi.h usability" >&5
+echo $ECHO_N "checking sys/dlpi.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+$ac_includes_default
+#include <sys/dlpi.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_header_compiler=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking sys/dlpi.h presence" >&5
+echo $ECHO_N "checking sys/dlpi.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <sys/dlpi.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  egrep -v '^ *\+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc in
+  yes:no )
+    { echo "$as_me:$LINENO: WARNING: sys/dlpi.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: sys/dlpi.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: sys/dlpi.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: sys/dlpi.h: proceeding with the preprocessor's result" >&2;};;
+  no:yes )
+    { echo "$as_me:$LINENO: WARNING: sys/dlpi.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: sys/dlpi.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: sys/dlpi.h: check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: sys/dlpi.h: check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: sys/dlpi.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: sys/dlpi.h: proceeding with the preprocessor's result" >&2;};;
+esac
+echo "$as_me:$LINENO: checking for sys/dlpi.h" >&5
+echo $ECHO_N "checking for sys/dlpi.h... $ECHO_C" >&6
+if test "${ac_cv_header_sys_dlpi_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_sys_dlpi_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_sys_dlpi_h" >&5
+echo "${ECHO_T}$ac_cv_header_sys_dlpi_h" >&6
+
+fi
+if test $ac_cv_header_sys_dlpi_h = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DLPI 1
+_ACEOF
+
+fi
+
+
+
+
 
 
 
@@ -3828,7 +4031,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_inet_aton" = no; then
-  for ac_lib in -lsocket -lnsl; do
+  for ac_lib in socket nsl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -3936,7 +4139,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_inet_pton" = no; then
-  for ac_lib in -lsocket -lnsl; do
+  for ac_lib in socket nsl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5412,7 +5615,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_getnameinfo" = no; then
-  for ac_lib in -lnsl; do
+  for ac_lib in nsl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5530,7 +5733,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_gethostbyaddr_r" = no; then
-  for ac_lib in -lnsl; do
+  for ac_lib in nsl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5741,7 +5944,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_ares_init" = no; then
-  for ac_lib in -lares; do
+  for ac_lib in ares; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5864,7 +6067,7 @@ cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_gethostbyaddr" = no; then
-  for ac_lib in -lnsl; do
+  for ac_lib in nsl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5953,10 +6156,10 @@ echo "$as_me:$LINENO: checking where to find pcap.h" >&5
 echo $ECHO_N "checking where to find pcap.h... $ECHO_C" >&6
 foundpcaph=0
 oldCPPFLAGS=$CPPFLAGS
-for prefix in "" $libpcap_prefix ; do
+for test_prefix in "" $libpcap_prefix ; do
     for x in "" /pcap ; do
-        if test x$prefix != x ; then
-            CPPFLAGS="$oldCPPFLAGS -I$prefix/include$x"
+        if test x$test_prefix != x ; then
+            CPPFLAGS="$oldCPPFLAGS -I$test_prefix/include$x"
         fi
         cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -5983,8 +6186,8 @@ else
 fi
 if test -z "$ac_cpp_err"; then
 
-        echo "$as_me:$LINENO: result: $prefix/include$x" >&5
-echo "${ECHO_T}$prefix/include$x" >&6
+        echo "$as_me:$LINENO: result: $test_prefix/include$x" >&5
+echo "${ECHO_T}$test_prefix/include$x" >&6
         foundpcaph=1
         break
 
@@ -6009,8 +6212,8 @@ echo "$as_me: error: can't find pcap.h
   You're not going to get very far without libpcap." >&2;}
    { (exit 1); exit 1; }; }
 else
-        if test x$prefix != x ; then
-        LDFLAGS="$LDFLAGS -L$prefix"
+        if test x$test_prefix != x ; then
+        LDFLAGS="$LDFLAGS -L$test_prefix"
     fi
 
 echo "$as_me:$LINENO: checking for pcap_open_live in -lpcap" >&5
@@ -6345,6 +6548,32 @@ else
 echo "${ECHO_T}$foundthrflag $foundthrlib" >&6
 fi
 
+
+echo "$as_me:$LINENO: checking if we need to enable promiscuous mode by default" >&5
+echo $ECHO_N "checking if we need to enable promiscuous mode by default... $ECHO_C" >&6
+
+enable_default_promiscuous="no"
+
+case "$host_os" in
+solaris*) enable_default_promiscuous="yes" ;;
+esac
+
+# Check whether --enable-default-promiscuous or --disable-default-promiscuous was given.
+if test "${enable_default_promiscuous+set}" = set; then
+  enableval="$enable_default_promiscuous"
+
+fi;
+
+echo "$as_me:$LINENO: result: $enable_default_promiscuous" >&5
+echo "${ECHO_T}$enable_default_promiscuous" >&6
+
+if test x"$enable_default_promiscuous" = x"yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NEED_PROMISCUOUS_FOR_OUTGOING 1
+_ACEOF
+
+fi
 
 
 
@@ -6924,6 +7153,18 @@ s,@ECHO_C@,$ECHO_C,;t t
 s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
+s,@build@,$build,;t t
+s,@build_cpu@,$build_cpu,;t t
+s,@build_vendor@,$build_vendor,;t t
+s,@build_os@,$build_os,;t t
+s,@host@,$host,;t t
+s,@host_cpu@,$host_cpu,;t t
+s,@host_vendor@,$host_vendor,;t t
+s,@host_os@,$host_os,;t t
+s,@target@,$target,;t t
+s,@target_cpu@,$target_cpu,;t t
+s,@target_vendor@,$target_vendor,;t t
+s,@target_os@,$target_os,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t

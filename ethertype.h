@@ -18,7 +18,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /home/cvs/iftop/ethertype.h,v 1.1 2002/10/31 16:53:32 pdw Exp $ (LBL)
+ * @(#) $Header: /home/pdw/vcvs/repos/iftop/ethertype.h,v 1.2 2003/06/06 22:42:34 pdw Exp $ (LBL)
  */
 
 /*
