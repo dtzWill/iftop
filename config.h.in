@@ -1,88 +1,115 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.in by autoheader.  */
 
-/* Define to empty if the keyword does not work.  */
-#undef const
+/* 7-argument gethostbyaddr_r returns struct hostent* */
+#undef GETHOSTBYADDR_R_RETURNS_HOSTENT_P
 
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-#undef size_t
+/* 8-argument gethostbyaddr_r returns int */
+#undef GETHOSTBYADDR_R_RETURNS_INT
 
-/* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
+/* C99 fixed-width int types available */
+#undef HAVE_C99_INTS
 
-/* Define if you can safely include both <sys/time.h> and <time.h>.  */
-#undef TIME_WITH_SYS_TIME
-
-/* The number of bytes in a unsigned int.  */
-#undef SIZEOF_UNSIGNED_INT
-
-/* The number of bytes in a unsigned long int.  */
-#undef SIZEOF_UNSIGNED_LONG_INT
-
-/* The number of bytes in a unsigned short int.  */
-#undef SIZEOF_UNSIGNED_SHORT_INT
-
-/* Define if you have the inet_aton function.  */
+/* Define to 1 if you have the `inet_aton' function. */
 #undef HAVE_INET_ATON
 
-/* Define if you have the inet_pton function.  */
+/* Define to 1 if you have the `inet_pton' function. */
 #undef HAVE_INET_PTON
 
-/* Define if you have the regcomp function.  */
-#undef HAVE_REGCOMP
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
 
-/* Define if you have the select function.  */
-#undef HAVE_SELECT
-
-/* Define if you have the strdup function.  */
-#undef HAVE_STRDUP
-
-/* Define if you have the strerror function.  */
-#undef HAVE_STRERROR
-
-/* Define if you have the strspn function.  */
-#undef HAVE_STRSPN
-
-/* Define if you have the <pcap.h> header file.  */
-#undef HAVE_PCAP_H
-
-/* Define if you have the <pcap/pcap.h> header file.  */
-#undef HAVE_PCAP_PCAP_H
-
-/* Define if you have the <stdint.h> header file.  */
-#undef HAVE_STDINT_H
-
-/* Define if you have the <sys/inttypes.h> header file.  */
-#undef HAVE_SYS_INTTYPES_H
-
-/* Define if you have the <sys/ioctl.h> header file.  */
-#undef HAVE_SYS_IOCTL_H
-
-/* Define if you have the <sys/sockio.h> header file.  */
-#undef HAVE_SYS_SOCKIO_H
-
-/* Define if you have the <sys/time.h> header file.  */
-#undef HAVE_SYS_TIME_H
-
-/* Define if you have the <unistd.h> header file.  */
-#undef HAVE_UNISTD_H
-
-/* Define if you have the nsl library (-lnsl).  */
+/* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define if you have the pcap library (-lpcap).  */
+/* Define to 1 if you have the `pcap' library (-lpcap). */
 #undef HAVE_LIBPCAP
 
-/* Name of package */
-#undef PACKAGE
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
 
-/* Version number of package */
-#undef VERSION
+/* Define to 1 if you have the <pcap.h> header file. */
+#undef HAVE_PCAP_H
+
+/* Define to 1 if you have the <pcap/pcap.h> header file. */
+#undef HAVE_PCAP_PCAP_H
+
+/* Define to 1 if you have the `regcomp' function. */
+#undef HAVE_REGCOMP
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strspn' function. */
+#undef HAVE_STRSPN
+
+/* Define to 1 if you have the <sys/inttypes.h> header file. */
+#undef HAVE_SYS_INTTYPES_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
 
 /* The iftop version number */
 #undef IFTOP_VERSION
 
-/* size of u_int8_t */
-#undef SIZEOF_U_INT8_T
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of a `unsigned int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The size of a `unsigned long int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG_INT
+
+/* The size of a `unsigned short int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_SHORT_INT
 
 /* size of u_int16_t */
 #undef SIZEOF_U_INT16_T
@@ -90,20 +117,14 @@
 /* size of u_int32_t */
 #undef SIZEOF_U_INT32_T
 
-/* C99 fixed-width int types available */
-#undef HAVE_C99_INTS
+/* size of u_int8_t */
+#undef SIZEOF_U_INT8_T
 
-/* use getnameinfo for name resolution */
-#undef USE_GETNAMEINFO
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
 
-/* 8-argument gethostbyaddr_r returns int */
-#undef GETHOSTBYADDR_R_RETURNS_INT
-
-/* 7-argument gethostbyaddr_r returns struct hostent* */
-#undef GETHOSTBYADDR_R_RETURNS_HOSTENT_P
-
-/* use gethostbyaddr_r for name resolution */
-#undef USE_GETHOSTBYADDR_R
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
 
 /* use ARES for name resolution */
 #undef USE_ARES
@@ -111,3 +132,17 @@
 /* use gethostbyaddr for name resolution */
 #undef USE_GETHOSTBYADDR
 
+/* use gethostbyaddr_r for name resolution */
+#undef USE_GETHOSTBYADDR_R
+
+/* use getnameinfo for name resolution */
+#undef USE_GETNAMEINFO
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t

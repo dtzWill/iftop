@@ -1,5 +1,7 @@
-IFTOP(8)                                                 IFTOP(8)
 
+
+
+IFTOP(8)                                                 IFTOP(8)
 
 
 NNAAMMEE
@@ -136,21 +138,29 @@ PPOORRTT DDIISSPPLLAAYY
        respectively. pp will toggle port display on/off.
 
 
+DDIISSPPLLAAYY TTYYPPEE
+       tt  cycles through the four line display modes; the default
+       2-line display, with sent and received traffic on separate
+       lines,  and  3  1-line  displays,  with sent, received, or
+       total traffic shown.
+
+
 DDIISSPPLLAAYY OORRDDEERR
-       By  default,  the  display is ordered according to the 10s
-       average (2nd column).  By pressing 11, 22 or 33 it is  possi-
+       By default, the display is ordered according  to  the  10s
+       average  (2nd column).  By pressing 11, 22 or 33 it is possi-
        ble to sort by the 1st, 2nd or 3rd column.   By pressing <<
-       or >> the display will be sorted by source  or  destination
+       or  >>  the display will be sorted by source or destination
        hostname respectively.
 
 
 DDIISSPPLLAAYY FFIILLTTEERRIINNGG
-       ll  allows you to enter a POSIX extended regular expression
-       that will be used to filter hostnames shown  in  the  dis-
-       play.   This  is a good way to quickly limit what is shown
-       on the display.  Note that this happens at  a  much  later
-       stage  than filter code, and does not affect what is actu-
-       ally captured.
+       ll allows you to enter a POSIX extended regular  expression
+       that  will  be  used to filter hostnames shown in the dis-
+       play.  This is a good way to quickly limit what  is  shown
+       on  the  display.   Note that this happens at a much later
+       stage than filter code, and does not affect what is  actu-
+       ally  captured.   Display filters DO NOT affect the totals
+       at the bottom of the screen.
 
 
 PPAAUUSSEE DDIISSPPLLAAYY // FFRREEEEZZEE OORRDDEERR
@@ -160,6 +170,11 @@ PPAAUUSSEE DDIISSPPLLAAYY // FFRREEEEZZEE OORRDDEERR
        effect  that traffic between hosts not shown on the screen
        at the time will not be shown at all, although it will  be
        included in the totals at the bottom of the screen.
+
+
+SSCCRROOLLLL DDIISSPPLLAAYY
+       jj and kk will scroll the display of hosts.  This feature is
+       most useful when the display order is frozen (see  above).
 
 
 FFIILLTTEERR CCOODDEE
@@ -185,12 +200,14 @@ QQUUIIRRKKSS ((aakkaa tthheeyy''rree ffeeaattuurreess,
        A more subtle explanation  comes  about  when  running  in
        promiscuous  mode without specifying a --NN option.  In this
        case there is no easy way to assign the direction of traf-
-       fic between two other hosts.  For the purposes of the main
-       display this is done in an arbitrary fashion (by  ordering
-       of  IP  addresses), but for the sake of totals all traffic
-       between other hosts  is  accounted  as  incoming,  because
-       that's  what  it  is from the point of view of your inter-
-       face.
+       fic  between  two  third parties.  For the purposes of the
+       main display this is done  in  an  arbitrary  fashion  (by
+       ordering  of IP addresses), but for the sake of totals all
+       traffic between other  hosts  is  accounted  as  incoming,
+       because  that's  what it is from the point of view of your
+       interface.  The --NN option allows you to specify  an  arbi-
+       trary network boundary, and to show traffic flowing across
+       it.
 
        PPeeaakk ttoottaallss ddoonn''tt aadddd uupp
 
@@ -219,7 +236,7 @@ AAUUTTHHOORR
 
 
 VVEERRSSIIOONN
-       $Id: iftop.8,v 1.21 2002/10/25 14:39:33 pdw Exp $
+       $Id: iftop.8,v 1.22 2003/03/01 01:55:13 pdw Exp $
 
 
 CCOOPPYYIINNGG
@@ -243,4 +260,10 @@ CCOOPPYYIINNGG
 
 
 
-                                                         IFTOP(8)
+
+
+
+
+                                                                1
+
+

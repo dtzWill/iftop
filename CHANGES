@@ -1,7 +1,14 @@
 Change log for iftop
-$Id: CHANGES,v 1.25 2002/11/04 12:27:34 chris Exp $
+$Id: CHANGES,v 1.32 2003/05/21 17:03:14 pdw Exp $
 
-0.11
+0.12 21/05/03
+
+Added 1-line display options ("t")
+Added display scrolling ("j", "k")
+Fixed code for obtaining hardware address (on Linux at least)
+Added IP-based direction assignment
+
+0.11 08/01/03
 
 Added support for token ring networks
 Token ring network direction determination

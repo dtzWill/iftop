@@ -20,7 +20,7 @@ typedef struct {
     int last_write;
 } history_type;
 
-void tick();
+void tick(int print);
 
 void *xmalloc(size_t n);
 void *xcalloc(size_t n, size_t m);
@@ -35,14 +35,5 @@ void ui_init(void);
 /* options.c */
 void options_read(int argc, char **argv);
 
-
-/* Make use of SIOCGIFHWADDR work on FreeBSD and Solaris. */
-#ifndef SIOCGIFHWADDR
-#   ifdef HAVE_SYS_SOCKIO_H
-#       include <sys/sockio.h>  /* Solaris and others?? */
-#   endif
-#   define SIOCGIFHWADDR SIOCGIFADDR
-#   define ifr_hwaddr ifr_addr
-#endif
 
 #endif /* __IFTOP_H_ */
