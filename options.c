@@ -13,7 +13,7 @@
 
 options_t options;
 
-char optstr[] = "+i:f:n:dhp";
+char optstr[] = "+i:f:n:dhpb";
 
 /* Global options. */
 
@@ -26,6 +26,7 @@ static void set_defaults() {
     options.dnsresolution = 1;
     options.promiscuous = 0;
     options.showbars = 1;
+    options.aggregate = OPTION_AGGREGATE_OFF;
 }
 
 static void die(char *msg) {
@@ -68,12 +69,13 @@ static void usage(FILE *fp) {
     fprintf(fp,
 "iftop: display bandwidth usage on an interface by host\n"
 "\n"
-"Synopsis: iftop -h | [-d] [-p] [-i interface] [-f filter code] [-n net/mask]\n"
+"Synopsis: iftop -h | [-dpb] [-i interface] [-f filter code] [-n net/mask]\n"
 "\n"
 "   -h                  display this message\n"
 "   -d                  don't do hostname lookups\n"
 "   -p                  run in promiscuous mode (show traffic between other\n"
 "                       hosts on the same network segment)\n"
+"   -b                  don't display a bar graph of traffic\n"
 "   -i interface        listen on named interface (default: eth0)\n"
 "   -f filter code      use filter code to select packets to count\n"
 "                       (default: none, but only IP packets are counted)\n"
@@ -114,6 +116,11 @@ void options_read(int argc, char **argv) {
             case 'n':
                 set_net_filter(optarg);
                 break;
+
+            case 'b':
+                options.showbars = 0;
+                break;
+
 
             case '?':
                 fprintf(stderr, "iftop: unknown option -%c\n", optopt);

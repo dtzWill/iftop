@@ -10,8 +10,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+typedef enum {
+  OPTION_AGGREGATE_OFF,
+  OPTION_AGGREGATE_SRC,
+  OPTION_AGGREGATE_DEST
+} option_aggregate_t;
+
 typedef struct {
-    /* interface to listen on */
+    /* interface on which to listen */
     char *interface;
 
     /* pcap filter code */
@@ -24,6 +30,7 @@ typedef struct {
     int dnsresolution;
     int promiscuous;
     int showbars;
+    option_aggregate_t aggregate;
 
 } options_t;
 
