@@ -1,11 +1,15 @@
 Things to do for iftop
-$Id: TODO,v 1.26 2003/10/20 21:41:53 pdw Exp $
+$Id: TODO,v 1.24 2003/10/14 15:36:37 pdw Exp $
 
 * Add configurable offset for DLT_RAW
 
+* Search for BSD interface names - need to know what to look for.
+
 * IP types other than v4?
 
-* Write config file
+* Config file.
+
+* Which average to use for the bar graph? - add option to choose
 
 * Show several and peaks? Colours?
 
@@ -16,8 +20,7 @@ $Id: TODO,v 1.26 2003/10/20 21:41:53 pdw Exp $
 
 * Specify max link, then show %age capacity.
 
-* Count obscured connections.
+* Turn off port resolution => add to config file
 
-* Startup warnings cause pause.
+* Linear bar graphs.
 
-* Re-merge spec file
