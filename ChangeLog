@@ -1,5 +1,5 @@
 Change log for iftop
-$Id: ChangeLog,v 1.2 2003/06/08 18:02:44 pdw Exp $
+$Id: ChangeLog,v 1.3 2003/06/09 19:26:49 pdw Exp $
 
 0.13
 
@@ -16,6 +16,7 @@ $Id: ChangeLog,v 1.2 2003/06/08 18:02:44 pdw Exp $
     Jonathan Abbey <jonabbey@ganymeta.org>
 
 * Made errors during IP/MAC address discovery non-fatal
+* Added cummulative line totals ("T")
 
 0.12 21/05/03
 
