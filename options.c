@@ -4,6 +4,8 @@
  *
  */
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,14 +13,20 @@
 
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <net/if.h>
 
 #include "iftop.h"
 #include "options.h"
 
+#if !defined(HAVE_INET_ATON) && defined(HAVE_INET_PTON)
+#   define inet_aton(a, b)  inet_pton(AF_INET, (a), (b))
+#endif
+
 options_t options;
 
-char optstr[] = "+i:f:n:dhpbBP";
+char optstr[] = "+i:f:nN:hpbBP";
 
 /* Global options. */
 
@@ -45,32 +53,24 @@ static int is_bad_interface_name(char *i) {
 /* This finds the first interface which is up and is not the loopback
  * interface or one of the interface types listed in bad_interface_names. */
 static char *get_first_interface(void) {
-    int s, size = 1;
-    struct ifreq *ifr;
-    struct ifconf ifc = {0};
+    struct if_nameindex * nameindex;
     char *i = NULL;
+    int j = 0;
     /* Use if_nameindex(3) instead? */
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-        return NULL;
-    ifc.ifc_len = sizeof *ifr;
-    do {
-        ++size;
-        ifc.ifc_req = xrealloc(ifc.ifc_req, size * sizeof *ifc.ifc_req);
-        ifc.ifc_len = size * sizeof *ifc.ifc_req;
-        if (ioctl(s, SIOCGIFCONF, &ifc) == -1) {
-            perror("SIOCGIFCONF");
-            return NULL;
-        }
-    } while (size * sizeof *ifc.ifc_req <= ifc.ifc_len);
-    /* Ugly. */
-    for (ifr = ifc.ifc_req; (char*)ifr < (char*)ifc.ifc_req + ifc.ifc_len; ++ifr) {
-        if (strcmp(ifr->ifr_name, "lo") != 0 && !is_bad_interface_name(ifr->ifr_name)
-            && ioctl(s, SIOCGIFFLAGS, ifr) == 0 && ifr->ifr_flags & IFF_UP) {
-            i = xstrdup(ifr->ifr_name);
+
+    nameindex = if_nameindex();
+    if(nameindex == NULL) {
+      return NULL;
+    }
+
+    while(nameindex[j].if_index != 0) {
+        if (strcmp(nameindex[j].if_name, "lo") != 0 && !is_bad_interface_name(nameindex[j].if_name)) {
+            i = xstrdup(nameindex[j].if_name);
             break;
         }
+        j++;
     }
-    xfree(ifc.ifc_req);
+    if_freenameindex(nameindex);
     return i;
 }
 
@@ -153,10 +153,10 @@ static void usage(FILE *fp) {
     fprintf(fp,
 "iftop: display bandwidth usage on an interface by host\n"
 "\n"
-"Synopsis: iftop -h | [-dpb] [-i interface] [-f filter code] [-n net/mask]\n"
+"Synopsis: iftop -h | [-npbBP] [-i interface] [-f filter code] [-N net/mask]\n"
 "\n"
 "   -h                  display this message\n"
-"   -d                  don't do hostname lookups\n"
+"   -n                  don't do hostname lookups\n"
 "   -p                  run in promiscuous mode (show traffic between other\n"
 "                       hosts on the same network segment)\n"
 "   -b                  don't display a bar graph of traffic\n"
@@ -164,7 +164,7 @@ static void usage(FILE *fp) {
 "   -i interface        listen on named interface\n"
 "   -f filter code      use filter code to select packets to count\n"
 "                       (default: none, but only IP packets are counted)\n"
-"   -n net/mask         show traffic flows in/out of network\n"
+"   -N net/mask         show traffic flows in/out of network\n"
 "   -P                  show ports as well as hosts\n"
 "\n"
 "iftop, version " IFTOP_VERSION "\n"
@@ -184,7 +184,7 @@ void options_read(int argc, char **argv) {
                 usage(stdout);
                 exit(0);
 
-            case 'd':
+            case 'n':
                 options.dnsresolution = 0;
                 break;
 
@@ -204,7 +204,7 @@ void options_read(int argc, char **argv) {
                 options.showports = OPTION_PORTS_ON;
                 break;
 
-            case 'n':
+            case 'N':
                 set_net_filter(optarg);
                 break;
 
@@ -228,6 +228,10 @@ void options_read(int argc, char **argv) {
         }
     }
 
-    if (optind != argc)
-        fprintf(stderr, "iftop: warning: ignored arguments following options\n");
+    if (optind != argc) {
+        fprintf(stderr, "iftop: found arguments following options\n");
+        fprintf(stderr, "*** some options have changed names since v0.9 ***\n");
+        usage(stderr);
+        exit(1);
+    }
 }

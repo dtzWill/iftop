@@ -3,6 +3,8 @@
  *
  */
 
+#include <sys/types.h>
+
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
@@ -82,7 +84,8 @@ int peaksent, peakrecv, peaktotal;
 
 #define HELP_MSG_SIZE 80
 int showhelphint = 0;
-int helptimer = 0;
+int persistenthelp = 0;
+time_t helptimer = 0;
 char helpmsg[HELP_MSG_SIZE];
 int dontshowdisplay = 0;
 
@@ -186,16 +189,17 @@ void readable_size(float n, char* buf, int bsize, int ksize, int bytes) {
 static struct {
     int max, interval;
 } scale[] = {
-        {       8000,     10 },     /* 64 kbit/s */
-        {      16000,     10 },
-        {      32000,     10 },
-        {     125000,     10 },     /* 1 Mbit/s */
-        {    1250000,     10 },     
-        {   12500000,    100 },
-        {  125000000,    100 }      /* 1 Gbit/s */
+        {      64000,     10 },     /* 64 kbit/s */
+        {     128000,     10 },
+        {     256000,     10 },
+        {    1000000,     10 },     /* 1 Mbit/s */
+        {   10000000,     10 },     
+        {  100000000,    100 },
+        { 1000000000,    100 }      /* 1 Gbit/s */
     };
 static int rateidx = 0, wantbiggerrate;
 
+/* rate in bits */
 static int get_bar_length(const int rate) {
     float l;
     if (rate <= 0)
@@ -207,18 +211,19 @@ static int get_bar_length(const int rate) {
 }
 
 static void draw_bar_scale(int* y) {
-    int i;
+    float i;
     if(options.showbars) {
         /* Draw bar graph scale on top of the window. */
         move(*y, 0);
         clrtoeol();
         mvhline(*y + 1, 0, 0, COLS);
-        for (i = 1; i <= scale[rateidx].max; i *= scale[rateidx].interval) {
+        /* i in bytes */
+        for (i = 1.25; i * 8 <= scale[rateidx].max; i *= scale[rateidx].interval) {
             char s[40], *p;
             int x;
             readable_size(i, s, sizeof s, 1000, 0);
             p = s + strspn(s, " ");
-            x = get_bar_length(i);
+            x = get_bar_length(i * 8);
             mvaddch(*y + 1, x, ACS_BTEE);
             if (x + strlen(p) >= COLS)
                 x = COLS - strlen(p);
@@ -241,29 +246,27 @@ int history_length(const int d) {
 }
 
 void draw_line_totals(int y, host_pair_line* line) {
-    int j, t, L;
+    int j, L;
     char buf[10];
     int x = (COLS - 8 * HISTORY_DIVISIONS);
 
     for(j = 0; j < HISTORY_DIVISIONS; j++) {
-        t = history_length(j);
-        readable_size(line->sent[j] / t, buf, 10, 1024, options.bandwidth_in_bytes);
+        readable_size(line->sent[j], buf, 10, 1024, options.bandwidth_in_bytes);
         mvaddstr(y, x, buf);
 
-        readable_size(line->recv[j] / t, buf, 10, 1024, options.bandwidth_in_bytes);
+        readable_size(line->recv[j], buf, 10, 1024, options.bandwidth_in_bytes);
         mvaddstr(y+1, x, buf);
         x += 8;
     }
     
     if(options.showbars) {
-        t = history_length(BARGRAPH_INTERVAL);
         mvchgat(y, 0, -1, A_NORMAL, 0, NULL);
-        L = get_bar_length(8 * line->sent[BARGRAPH_INTERVAL] / t);
+        L = get_bar_length(8 * line->sent[BARGRAPH_INTERVAL] );
         if (L > 0)
             mvchgat(y, 0, L + 1, A_REVERSE, 0, NULL);
 
         mvchgat(y+1, 0, -1, A_NORMAL, 0, NULL);
-        L = get_bar_length(8 * line->recv[BARGRAPH_INTERVAL] / t);
+        L = get_bar_length(8 * line->recv[BARGRAPH_INTERVAL] );
         if (L > 0)
             mvchgat(y+1, 0, L + 1, A_REVERSE, 0, NULL);
     }
@@ -272,15 +275,14 @@ void draw_line_totals(int y, host_pair_line* line) {
 void draw_totals(host_pair_line* totals) {
     /* Draw rule */
     int y = LINES - 4;
-    int j, t;
+    int j;
     char buf[10];
     int x = (COLS - 8 * HISTORY_DIVISIONS);
     y++;
     draw_line_totals(y, totals);
     y += 2;
     for(j = 0; j < HISTORY_DIVISIONS; j++) {
-        t = history_length(j);
-        readable_size((totals->sent[j] + totals->recv[j]) / t, buf, 10, 1024, options.bandwidth_in_bytes);
+        readable_size((totals->sent[j] + totals->recv[j]) , buf, 10, 1024, options.bandwidth_in_bytes);
         mvaddstr(y, x, buf);
         x += 8;
     }
@@ -329,12 +331,24 @@ void calculate_totals() {
             peaktotal = history_totals.recv[i] + history_totals.sent[i];	
         }
     }
+    for(i = 0; i < HISTORY_DIVISIONS; i++) {
+      int t = history_length(i);
+      totals.recv[i] /= t;
+      totals.sent[i] /= t;
+    }
 }
 
 void make_screen_list() {
     hash_node_type* n = NULL;
     while(hash_next_item(screen_hash, &n) == HASH_STATUS_OK) {
-        sorted_list_insert(&screen_list, (host_pair_line*)n->rec);
+        host_pair_line* line = (host_pair_line*)n->rec;
+        int i;
+        for(i = 0; i < HISTORY_DIVISIONS; i++) {
+          line->recv[i] /= history_length(i);
+          line->sent[i] /= history_length(i);
+        }
+
+        sorted_list_insert(&screen_list, line);
     }
 }
 
@@ -357,6 +371,7 @@ void analyse_data() {
       return;
     }
 
+    // Zero totals
     memset(&totals, 0, sizeof totals);
 
     if(options.freezeorder) {
@@ -414,7 +429,6 @@ void analyse_data() {
                     screen_line->sent[j] += d->sent[ii];
                 }
             }
-
         }
 
     }
@@ -579,9 +593,10 @@ void ui_print() {
 
 
     if(showhelphint) {
-      mvaddstr(0, 0, helpmsg);
-      clrtoeol();
-      mvchgat(0, 0, -1, A_REVERSE, 0, NULL);
+      mvaddstr(0, 0, " ");
+      mvaddstr(0, 1, helpmsg);
+      mvaddstr(0, 1 + strlen(helpmsg), " ");
+      mvchgat(0, 0, strlen(helpmsg) + 2, A_REVERSE, 0, NULL);
     }
     move(LINES - 1, COLS - 1);
     
@@ -598,7 +613,7 @@ void ui_tick(int print) {
   if(print) {
     ui_print();
   }
-  else if(showhelphint && (time(NULL) - helptimer > HELP_TIME)) {
+  else if(showhelphint && (time(NULL) - helptimer > HELP_TIME) && !persistenthelp) {
     showhelphint = 0;
     ui_print();
   }
@@ -613,7 +628,16 @@ void ui_curses_init() {
     halfdelay(2);
 }
 
+void showhelp(const char * s) {
+  strncpy(helpmsg, s, HELP_MSG_SIZE);
+  showhelphint = 1;
+  helptimer = time(NULL);
+  persistenthelp = 0;
+  tick(1);
+}
+
 void ui_init() {
+    char msg[20];
     ui_curses_init();
     
     erase();
@@ -624,15 +648,12 @@ void ui_init() {
     service_hash = serv_hash_create();
     serv_hash_initialise(service_hash);
 
+    snprintf(msg,20,"Listening on %s",options.interface);
+    showhelp(msg);
+
 
 }
 
-void showhelp(const char * s) {
-  strncpy(helpmsg, s, HELP_MSG_SIZE);
-  showhelphint = 1;
-  helptimer = time(NULL);
-  tick(1);
-}
 
 void showportstatus() {
   if(options.showports == OPTION_PORTS_ON) {
@@ -769,7 +790,15 @@ void ui_loop() {
                 // Don't tick here, otherwise we get a bogus display
                 break;
             case 'P':
-                options.paused = !options.paused;
+                if(options.paused) {
+                    options.paused = 0;
+                    showhelp("Display unpaused");
+                }
+                else {
+                    options.paused = 1;
+                    showhelp("Display paused");
+                    persistenthelp = 1;
+                }
                 break;
             case 'o':
                 if(options.freezeorder) {
@@ -779,6 +808,7 @@ void ui_loop() {
                 else {
                     options.freezeorder = 1;
                     showhelp("Order frozen");
+                    persistenthelp = 1;
                 }
                 break;
             case '1':
@@ -825,9 +855,11 @@ void ui_loop() {
                     }
                 }
                 dontshowdisplay = 0;
+                ui_print();
                 break;
             }
             case 'l': {
+#ifdef HAVE_REGCOMP
                 char *s;
                 dontshowdisplay = 1;
                 if ((s = edline(0, "Screen filter", options.screenfilter))) {
@@ -836,13 +868,17 @@ void ui_loop() {
                     }
                 }
                 dontshowdisplay = 0;
+                ui_print();
+#else
+                showhelp("Sorry, screen filters not supported on this platform")
+#endif
                 break;
             }
             case '!': {
                 char *s;
                 dontshowdisplay = 1;
-                if ((s = edline(0, "Command", ""))) {
-                    int i;
+                if ((s = edline(0, "Command", "")) && s[strspn(s, " \t")]) {
+                    int i, dowait = 0;
                     erase();
                     refresh();
                     endwin();
@@ -850,15 +886,19 @@ void ui_loop() {
                     i = system(s);
                     if (i == -1 || (i == 127 && errno != 0)) {
                         fprintf(stderr, "system: %s: %s\n", s, strerror(errno));
-                        sleep(1);
+                        dowait = 1;
                     } else if (i != 0) {
                         if (WIFEXITED(i))
                             fprintf(stderr, "%s: exited with code %d\n", s, WEXITSTATUS(i));
                         else if (WIFSIGNALED(i))
                             fprintf(stderr, "%s: killed by signal %d\n", s, WTERMSIG(i));
-                        sleep(1);
+                        dowait = 1;
                     }
                     ui_curses_init();
+                    if (dowait) {
+                        fprintf(stderr, "Press any key....");
+                        while (getch() == ERR);
+                    }
                     erase();
                     xfree(s);
                 }

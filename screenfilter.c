@@ -6,13 +6,17 @@
  *
  */
 
+#include "config.h"
+
+#ifdef HAVE_REGCOMP
+
 #include <sys/types.h>
 #include <regex.h>
 #include <stdio.h>
 #include "iftop.h"
 #include "options.h"
 
-static const char rcsid[] = "$Id: screenfilter.c,v 1.2 2002/10/25 10:48:32 pdw Exp $";
+static const char rcsid[] = "$Id: screenfilter.c,v 1.3 2002/11/04 12:27:35 chris Exp $";
 
 extern options_t options ;
 
@@ -54,3 +58,4 @@ int screen_filter_match(char *s) {
     }
 }
 
+#endif /* HAVE_REGCOMP */

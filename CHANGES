@@ -1,7 +1,15 @@
 Change log for iftop
-$Id: CHANGES,v 1.22 2002/10/25 10:18:50 pdw Exp $
+$Id: CHANGES,v 1.27 2003/01/08 12:22:12 pdw Exp $
 
-0.10 
+0.11 08/01/03
+
+Added support for token ring networks
+Token ring network direction determination
+    Martin Garton <Martin.Garton@DCSTRANS.COM>
+Added autoconf/automake build system
+Improved network interface auto selection
+
+0.10 29/10/02
 
 User selectable sort criteria
 On-the-fly filter code changes
@@ -9,6 +17,8 @@ Shell escape
 Alternative resolver back-ends
 Improved totals display
 Added regexp based screen filtering 
+Fixed pause functionality
+Change option names to be more like tcpdump
 
 0.9 22/10/02
 
