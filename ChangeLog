@@ -1,13 +1,11 @@
 Change log for iftop
-$Id: ChangeLog,v 1.7 2003/09/06 13:53:57 pdw Exp $
+$Id: ChangeLog,v 1.5 2003/08/27 18:29:27 pdw Exp $
 
 Attributions apply to all preceding items up to the next blank line.
 Unattributed items are by Paul Warren and Chris Lightfoot.
 
-0.14 06/09/03
-* Added forking resolver as fall-back resolver
-* Fixed DNS resolution so that no lookups are done if options.dns_resolution ==
-  0
+0.14
+
 * Configure/compilation fixes for Mac OS X 
 
 * MacOS interfaces to avoid by default
