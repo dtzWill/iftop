@@ -16,6 +16,13 @@ typedef enum {
   OPTION_AGGREGATE_DEST
 } option_aggregate_t;
 
+typedef enum {
+  OPTION_PORTS_OFF,
+  OPTION_PORTS_SRC,
+  OPTION_PORTS_DEST,
+  OPTION_PORTS_ON
+} option_port_t;
+
 typedef struct {
     /* interface on which to listen */
     char *interface;
@@ -30,7 +37,10 @@ typedef struct {
     int dnsresolution;
     int promiscuous;
     int showbars;
-    option_aggregate_t aggregate;
+    option_port_t showports;
+    int aggregate_src;
+    int aggregate_dest;
+    int paused;
 
 } options_t;
 

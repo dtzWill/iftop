@@ -18,7 +18,7 @@
 
 options_t options;
 
-char optstr[] = "+i:f:n:dhpb";
+char optstr[] = "+i:f:n:dhpbP";
 
 /* Global options. */
 
@@ -66,7 +66,10 @@ static void set_defaults() {
     options.dnsresolution = 1;
     options.promiscuous = 0;
     options.showbars = 1;
-    options.aggregate = OPTION_AGGREGATE_OFF;
+    options.showports = OPTION_PORTS_OFF;
+    options.aggregate_src = 0;
+    options.aggregate_dest = 0;
+    options.paused = 0;
 }
 
 static void die(char *msg) {
@@ -86,18 +89,31 @@ static void set_net_filter(char* arg) {
     if (inet_aton(arg, &options.netfilternet) == 0)
         die("Invalid network address\n");
     /* Accept a netmask like /24 or /255.255.255.0. */
-    if (!mask[strspn(mask, "0123456789")]) {
+    if (mask[strspn(mask, "0123456789")] == '\0') {
+        /* Whole string is numeric */
         int n;
         n = atoi(mask);
-        if (n > 32)
+        if (n > 32) {
             die("Invalid netmask");
-        else {
-            uint32_t mm = 0xffffffffl;
-            mm >>= n;
-            options.netfiltermask.s_addr = htonl(~mm);
         }
-    } else if (inet_aton(mask, &options.netfiltermask) == 0)
+        else {
+            if(n == 32) {
+              /* This needs to be special cased, although I don't fully 
+               * understand why -pdw 
+               */
+              options.netfiltermask.s_addr = htonl(0xffffffffl);
+            }
+            else {
+              uint32_t mm = 0xffffffffl;
+              mm >>= n;
+              options.netfiltermask.s_addr = htonl(~mm);
+            }
+        }
+    } 
+    else if (inet_aton(mask, &options.netfiltermask) == 0) {
         die("Invalid netmask\n");
+    }
+    options.netfilternet.s_addr = options.netfilternet.s_addr & options.netfiltermask.s_addr;
 
     options.netfilter = 1;
 
@@ -120,8 +136,10 @@ static void usage(FILE *fp) {
 "   -f filter code      use filter code to select packets to count\n"
 "                       (default: none, but only IP packets are counted)\n"
 "   -n net/mask         show traffic flows in/out of network\n"
+"   -P                  show ports as well as hosts\n"
 "\n"
-"iftop, version " IFTOP_VERSION " copyright (c) 2002 Paul Warren <pdw@ex-parrot.com>\n"
+"iftop, version " IFTOP_VERSION "\n"
+"copyright (c) 2002 Paul Warren <pdw@ex-parrot.com> and contributors\n"
             );
 }
 
@@ -151,6 +169,10 @@ void options_read(int argc, char **argv) {
 
             case 'p':
                 options.promiscuous = 1;
+                break;
+
+            case 'P':
+                options.showports = OPTION_PORTS_ON;
                 break;
 
             case 'n':
