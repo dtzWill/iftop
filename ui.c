@@ -5,12 +5,16 @@
 
 #include <ctype.h>
 #include <curses.h>
+#include <errno.h>
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <netdb.h>
+
+#include <sys/wait.h>
 
 #include "addr_hash.h"
 #include "serv_hash.h"
@@ -18,29 +22,33 @@
 #include "resolver.h"
 #include "sorted_list.h"
 #include "options.h"
+#include "screenfilter.h"
 
 #define HOSTNAME_LENGTH 256
 
 #define HISTORY_DIVISIONS   3
 #define BARGRAPH_INTERVAL   1   /* which division used for bars. */
 
+#define HELP_TIME 2
+
 #define HELP_MESSAGE \
-"Host display:\n"\
-" r - toggle DNS host resolution \n"\
-" s - toggle show source host\n"\
-" d - toggle show destination host\n"\
-"\nPort display:\n"\
-" R - toggle service resolution \n"\
-" S - toggle show source port \n"\
+"Host display:                          General:\n"\
+" r - toggle DNS host resolution         P - pause display\n"\
+" s - toggle show source host            h - toggle this help display\n"\
+" d - toggle show destination host       b - toggle bar graph display\n"\
+"                                        f - edit filter code\n"\
+"Port display:                           l - set screen filter\n"\
+" R - toggle service resolution          ! - shell command\n"\
+" S - toggle show source port            q - quit\n"\
 " D - toggle show destination port\n"\
 " p - toggle port display\n"\
-"\nGeneral:\n"\
-" P - pause display\n"\
-" h - toggle this help display\n"\
-" b - toggle bar graph display\n"\
-" q - quit\n"\
-"\niftop, version " IFTOP_VERSION 
-
+"\n"\
+"Sorting:\n"\
+" 1/2/3 - sort by 1st/2nd/3rd column\n"\
+" < - sort by source name\n"\
+" > - sort by dest name\n"\
+"\n"\
+"iftop, version " IFTOP_VERSION 
 
 
 /* 1, 15 and 60 seconds */
@@ -71,18 +79,76 @@ sorted_list_type screen_list;
 host_pair_line totals;
 int peaksent, peakrecv, peaktotal;
 
+#define HELP_MSG_SIZE 80
 int showhelphint = 0;
+int helptimer = 0;
+char helpmsg[HELP_MSG_SIZE];
+int dontshowdisplay = 0;
 
-int screen_line_compare(void* a, void* b) {
+/*
+ * Compare two screen lines based on bandwidth.  Start comparing from the 
+ * specified column
+ */
+int screen_line_bandwidth_compare(host_pair_line* aa, host_pair_line* bb, int start_div) {
     int i;
-    host_pair_line* aa = (host_pair_line*)a;
-    host_pair_line* bb = (host_pair_line*)b;
-    /* Ignore the first division so that stuff doesn't jump around too much */
-    for(i = 1; i < HISTORY_DIVISIONS; i++) {
+    for(i = start_div; i < HISTORY_DIVISIONS; i++) {
         if(aa->recv[i] + aa->sent[i] != bb->recv[i] + bb->sent[i]) {
             return(aa->recv[i] + aa->sent[i] < bb->recv[i] + bb->sent[i]);
         }
     }
+    return 1;
+}
+
+/*
+ * Compare two screen lines based on hostname / IP.  Fall over to compare by
+ * bandwidth.
+ */
+int screen_line_host_compare(struct in_addr* a, struct in_addr* b, host_pair_line* aa, host_pair_line* bb) {
+    char hosta[HOSTNAME_LENGTH], hostb[HOSTNAME_LENGTH];
+    int r;
+
+    /* This isn't overly efficient because we resolve again before 
+       display. */
+    if (options.dnsresolution) {
+        resolve(a, hosta, HOSTNAME_LENGTH);
+        resolve(b, hostb, HOSTNAME_LENGTH);
+    }
+    else {
+        strcpy(hosta, inet_ntoa(*a));
+        strcpy(hostb, inet_ntoa(*b));
+    }
+
+    r = strcmp(hosta, hostb);
+
+    if(r == 0) {
+        return screen_line_bandwidth_compare(aa, bb, 2);
+    }
+    else {
+        return (r > 0);
+    }
+
+
+}
+
+int screen_line_compare(void* a, void* b) {
+    host_pair_line* aa = (host_pair_line*)a;
+    host_pair_line* bb = (host_pair_line*)b;
+    if(options.sort == OPTION_SORT_DIV1) {
+      return screen_line_bandwidth_compare(aa, bb, 0);
+    }
+    else if(options.sort == OPTION_SORT_DIV2) {
+      return screen_line_bandwidth_compare(aa, bb, 1);
+    }
+    else if(options.sort == OPTION_SORT_DIV3) {
+      return screen_line_bandwidth_compare(aa, bb, 2);
+    }
+    else if(options.sort == OPTION_SORT_SRC) {
+      return screen_line_host_compare(&(aa->ap.src), &(bb->ap.src), aa, bb);
+    }
+    else if(options.sort == OPTION_SORT_DEST) {
+      return screen_line_host_compare(&(aa->ap.dst), &(bb->ap.dst), aa, bb);
+    }
+
     return 1;
 }
 
@@ -381,27 +447,22 @@ void sprint_host(char * line, struct in_addr* addr, unsigned int port, unsigned 
     sprintf(line + left, "%-*s", L-left, service);
 }
 
-void write_in_line(int y, int x, char * s) {
-    /* Peak traffic */
-    mvaddch(y, x, ACS_RTEE);
-    addstr("  ");
-    addstr(s);
-    addstr(" ");
-    addch(ACS_LTEE);
-}
+
 
 void ui_print() {
     sorted_list_node* nn = NULL;
-    char hostname[HOSTNAME_LENGTH];
+    char host1[HOSTNAME_LENGTH], host2[HOSTNAME_LENGTH];
     static char *line;
     static int lcols;
     int y = 0;
+
+    if (dontshowdisplay)
+        return;
 
     if (!line || lcols != COLS) {
         xfree(line);
         line = calloc(COLS + 1, 1);
     }
-
 
     /* 
      * erase() is faster than clear().  Dunno why we switched to 
@@ -416,24 +477,29 @@ void ui_print() {
     }
     else {
 
-
       /* Screen layout: we have 2 * HISTORY_DIVISIONS 6-character wide history
        * items, and so can use COLS - 12 * HISTORY_DIVISIONS to print the two
        * host names. */
 
       while((y < LINES - 5) && ((nn = sorted_list_next_item(&screen_list, nn)) != NULL)) {
           int x = 0, L;
+
+
           host_pair_line* screen_line = (host_pair_line*)nn->data;
 
           if(y < LINES - 5) {
               L = (COLS - 8 * HISTORY_DIVISIONS - 4) / 2;
-              if(L > sizeof hostname) {
-                  L = sizeof hostname;
+              if(L > HOSTNAME_LENGTH) {
+                  L = HOSTNAME_LENGTH;
               }
 
-              sprint_host(line, &(screen_line->ap.src), screen_line->ap.src_port, screen_line->ap.protocol, L);
+              sprint_host(host1, &(screen_line->ap.src), screen_line->ap.src_port, screen_line->ap.protocol, L);
+              sprint_host(host2, &(screen_line->ap.dst), screen_line->ap.dst_port, screen_line->ap.protocol, L);
+              if(!screen_filter_match(host1) && !screen_filter_match(host2)) {
+                continue;
+              }
 
-              mvaddstr(y, x, line);
+              mvaddstr(y, x, host1);
               x += L;
 
               mvaddstr(y, x, " => ");
@@ -441,9 +507,8 @@ void ui_print() {
 
               x += 4;
 
-              sprint_host(line, &(screen_line->ap.dst), screen_line->ap.dst_port, screen_line->ap.protocol, L);
 
-              mvaddstr(y, x, line);
+              mvaddstr(y, x, host2);
               
               draw_line_totals(y, screen_line);
 
@@ -490,11 +555,12 @@ void ui_print() {
     draw_totals(&totals);
 
 
-    if(showhelphint > 0) {
-      mvaddstr(0, 0, "Press h for help ");
+    if(showhelphint) {
+      mvaddstr(0, 0, helpmsg);
       clrtoeol();
-      showhelphint--;
+      mvchgat(0, 0, -1, A_REVERSE, 0, NULL);
     }
+    move(LINES - 1, COLS - 1);
     
     refresh();
 
@@ -505,14 +571,28 @@ void ui_print() {
     }
 }
 
-void ui_init() {
+void ui_tick(int print) {
+  if(print) {
+    ui_print();
+  }
+  else if(showhelphint && (time(NULL) - helptimer > HELP_TIME)) {
+    showhelphint = 0;
+    ui_print();
+  }
+}
+
+void ui_curses_init() {
     (void) initscr();      /* initialize the curses library */
     keypad(stdscr, TRUE);  /* enable keyboard mapping */
     (void) nonl();         /* tell curses not to do NL->CR/NL on output */
     (void) cbreak();       /* take input chars one at a time, no wait for \n */
     (void) noecho();       /* don't echo input */
     halfdelay(2);
+}
 
+void ui_init() {
+    ui_curses_init();
+    
     erase();
 
     screen_list_init();
@@ -524,8 +604,37 @@ void ui_init() {
 
 }
 
+void showhelp(const char * s) {
+  strncpy(helpmsg, s, HELP_MSG_SIZE);
+  showhelphint = 1;
+  helptimer = time(NULL);
+  tick(1);
+}
+
+void showportstatus() {
+  if(options.showports == OPTION_PORTS_ON) {
+    showhelp("Port display ON");
+  }
+  else if(options.showports == OPTION_PORTS_OFF) {
+    showhelp("Port display OFF");
+  }
+  else if(options.showports == OPTION_PORTS_DEST) {
+    showhelp("Port display DEST");
+  }
+  else if(options.showports == OPTION_PORTS_SRC) {
+    showhelp("Port display SOURCE");
+  }
+}
+
+
 void ui_loop() {
+    /* in edline.c */
+    char *edline(int linenum, const char *prompt, const char *initial);
+    /* in iftop.c */
+    char *set_filter_code(const char *filter);
+
     extern sig_atomic_t foad;
+
     while(foad == 0) {
         int i;
         i = getch();
@@ -535,31 +644,66 @@ void ui_loop() {
                 break;
 
             case 'r':
-                options.dnsresolution = !options.dnsresolution;
+                if(options.dnsresolution) {
+                    options.dnsresolution = 0;
+                    showhelp("DNS resolution off");
+                }
+                else {
+                    options.dnsresolution = 1;
+                    showhelp("DNS resolution on");
+                }
                 tick(1);
                 break;
 
             case 'R':
-                options.portresolution = !options.portresolution;
+                if(options.portresolution) {
+                    options.portresolution = 0;
+                    showhelp("Port resolution off");
+                }
+                else {
+                    options.portresolution = 1;
+                    showhelp("Port resolution on");
+                }
                 tick(1);
                 break;
 
             case 'h':
+            case '?':
                 options.showhelp = !options.showhelp;
                 tick(1);
                 break;
 
 	          case 'b':
-                options.showbars = !options.showbars; 
+                if(options.showbars) {
+                    options.showbars = 0;
+                    showhelp("Bars off");
+                }
+                else {
+                    options.showbars = 1;
+                    showhelp("Bars on");
+                }
                 tick(1);
                 break;
 
             case 's':
-                options.aggregate_src = !options.aggregate_src;
+                if(options.aggregate_src) {
+                    options.aggregate_src = 0;
+                    showhelp("Show source host");
+                }
+                else {
+                    options.aggregate_src = 1;
+                    showhelp("Hide source host");
+                }
                 break;
-
             case 'd':
-                options.aggregate_dest = !options.aggregate_dest;
+                if(options.aggregate_dest) {
+                    options.aggregate_dest = 0;
+                    showhelp("Show dest host");
+                }
+                else {
+                    options.aggregate_dest = 1;
+                    showhelp("Hide dest host");
+                }
                 break;
             case 'S':
                 /* Show source ports */
@@ -575,6 +719,7 @@ void ui_loop() {
                 else {
                   options.showports = OPTION_PORTS_OFF;
                 }
+                showportstatus();
                 break;
             case 'D':
                 /* Show dest ports */
@@ -590,22 +735,104 @@ void ui_loop() {
                 else {
                   options.showports = OPTION_PORTS_OFF;
                 }
+                showportstatus();
                 break;
             case 'p':
                 options.showports = 
                   (options.showports == OPTION_PORTS_OFF)
                   ? OPTION_PORTS_ON
                   : OPTION_PORTS_OFF;
+                showportstatus();
                 // Don't tick here, otherwise we get a bogus display
                 break;
             case 'P':
                 options.paused = !options.paused;
                 break;
+            case '1':
+                options.sort = OPTION_SORT_DIV1;
+                showhelp("Sort by col 1");
+                break;
+            case '2':
+                options.sort = OPTION_SORT_DIV2;
+                showhelp("Sort by col 2");
+                break;
+            case '3':
+                options.sort = OPTION_SORT_DIV3;
+                showhelp("Sort by col 3");
+                break;
+            case '<':
+                options.sort = OPTION_SORT_SRC;
+                showhelp("Sort by source");
+                break;
+            case '>':
+                options.sort = OPTION_SORT_DEST;
+                showhelp("Sort by dest");
+                break;
+            case 'f': {
+                char *s;
+                dontshowdisplay = 1;
+                if ((s = edline(0, "Net filter", options.filtercode))) {
+                    char *m;
+                    if (!(m = set_filter_code(s))) {
+                        xfree(options.filtercode);
+                        options.filtercode = s;
+                        /* -lpcap will write junk to stderr; we do our best to
+                         * erase it.... */
+                        touchline(stdscr, 0, 2);
+                        move(0, 0);
+                        clrtoeol();
+                        move(1, 0);
+                        clrtoeol();
+                        refresh();
+                    } else {
+                        showhelp(m);
+                        xfree(s);
+                    }
+                }
+                dontshowdisplay = 0;
+                break;
+            }
+            case 'l': {
+                char *s;
+                dontshowdisplay = 1;
+                if ((s = edline(0, "Screen filter", options.screenfilter))) {
+                    if(!screen_filter_set(s)) {
+                        showhelp("Invalid regexp");
+                    }
+                }
+                dontshowdisplay = 0;
+                break;
+            }
+            case '!': {
+                char *s;
+                dontshowdisplay = 1;
+                if ((s = edline(0, "Command", ""))) {
+                    int i;
+                    erase();
+                    refresh();
+                    endwin();
+                    errno = 0;
+                    i = system(s);
+                    if (i == -1 || (i == 127 && errno != 0)) {
+                        fprintf(stderr, "system: %s: %s\n", s, strerror(errno));
+                        sleep(1);
+                    } else if (i != 0) {
+                        if (WIFEXITED(i))
+                            fprintf(stderr, "%s: exited with code %d\n", s, WEXITSTATUS(i));
+                        else if (WIFSIGNALED(i))
+                            fprintf(stderr, "%s: killed by signal %d\n", s, WTERMSIG(i));
+                        sleep(1);
+                    }
+                    ui_curses_init();
+                    erase();
+                    xfree(s);
+                }
+                dontshowdisplay = 0;
+            }
             case ERR:
                 break;
             default:
-                showhelphint = 2;
-                tick(1);
+                showhelp("Press H or ? for help");
                 break;
         }
         tick(0);

@@ -95,6 +95,8 @@ static void set_defaults() {
     options.paused = 0;
     options.showhelp = 0;
     options.bandwidth_in_bytes = 0;
+    options.sort = OPTION_SORT_DIV2;
+    options.screenfilter = NULL;
 }
 
 static void die(char *msg) {
@@ -190,7 +192,7 @@ void options_read(int argc, char **argv) {
                 break;
 
             case 'f':
-                options.filtercode = optarg;
+                options.filtercode = xstrdup(optarg);
                 break;
 
             case 'p':

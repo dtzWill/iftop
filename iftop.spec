@@ -1,10 +1,10 @@
 Summary:	iftop - provides realtime bandwith usage on an interface
 Name:		iftop
-Version:	0.10pre1
+Version:	0.10pre2
 Release:	1
 License:	GPL
 Group:		Applications/Internet
-Source0:	http://www.ex-parrot.com/~pdw/iftop/download/iftop-0.10pre1.tar.gz
+Source0:	http://www.ex-parrot.com/~pdw/iftop/download/iftop-0.10pre2.tar.gz
 URL:		http://www.ex-parrot.com/~pdw/iftop/
 Buildroot:	%{_tmppath}/%{name}-%{version}-%(id -u -n)
 Packager:	Riku Meskanen <mesrik@cc.jyu.fi>
