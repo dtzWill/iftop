@@ -1,4 +1,4 @@
-/* @(#) $Header: /home/pdw/vcvs/repos/iftop/ppp.h,v 1.2 2005/12/25 20:42:45 pdw Exp $ (LBL) */
+/* @(#) $Header: /home/pdw/vcvs/repos/iftop/ppp.h,v 1.1 2004/07/26 20:36:29 pdw Exp $ (LBL) */
 /*
  * Point to Point Protocol (PPP) RFC1331
  *
@@ -57,3 +57,5 @@
 #define PPP_BACP	0xc02b	/* Bandwidth Allocation Control Protocol */
 #define PPP_BAP		0xc02d	/* BAP */
 #define PPP_MP		0xc03d	/* Multi-Link */
+
+extern struct tok ppptype2str[];

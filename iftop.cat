@@ -27,9 +27,9 @@ DDEESSCCRRIIPPTTIIOONN
 
        By  default,  iiffttoopp counts all IP packets that pass through the filter,
        and the direction of the packet is determined according to  the  direc-
-       tion the packet is moving across the interface.  Using the --FF option it
+       tion the packet is moving across the interface.  Using the --NN option it
        is possible to get iiffttoopp to show packets entering and leaving  a  given
-       network.  For example, iiffttoopp --FF 1100..00..00..00//225555..00..00..00 will analyse packets
+       network.  For example, iiffttoopp --NN 1100..00..00..00//225555..00..00..00 will analyse packets
        flowing in and out of the 10.* network.
 
        Some other filter ideas:
@@ -79,8 +79,8 @@ OOPPTTIIOONNSS
 
        --cc _c_o_n_f_i_g _f_i_l_e
               Specifies an alternate config file.   If  not  specified,  iftop
-              will  use  ~~//..iiffttoopprrcc if it exists.  See below for a description
-              of config files
+              will use ~~//..iiffttooppcc if it exists.  See below for a description of
+              config files
 
 
 DDIISSPPLLAAYY
@@ -247,12 +247,12 @@ QQUUIIRRKKSS ((aakkaa tthheeyy''rree ffeeaattuurreess,
        you, but is included in the totals.
 
        A more subtle explanation comes about when running in promiscuous  mode
-       without  specifying  a --FF option.  In this case there is no easy way to
+       without  specifying  a --NN option.  In this case there is no easy way to
        assign the direction of traffic between two  third  parties.   For  the
        purposes  of  the main display this is done in an arbitrary fashion (by
        ordering of IP addresses), but for  the  sake  of  totals  all  traffic
        between other hosts is accounted as incoming, because that's what it is
-       from the point of view of your interface.  The --FF option allows you  to
+       from the point of view of your interface.  The --NN option allows you  to
        specify  an  arbitrary  network  boundary,  and to show traffic flowing
        across it.
 
@@ -286,7 +286,7 @@ AAUUTTHHOORR
 
 
 VVEERRSSIIOONN
-       $Id: iftop.8,v 1.25 2005/12/25 11:50:21 pdw Exp $
+       $Id: iftop.8,v 1.24 2003/10/22 19:28:31 pdw Exp $
 
 
 CCOOPPYYIINNGG

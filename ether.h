@@ -14,9 +14,4 @@ struct	ether_header {
 	u_int16_t	ether_type;
 };
 
-struct vlan_8021q_header {
-	u_int16_t	priority_cfi_vid;
-	u_int16_t	ether_type;
-};
-
 #endif 
