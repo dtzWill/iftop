@@ -135,6 +135,9 @@
 /* use ARES for name resolution */
 #undef USE_ARES
 
+/* use a REALLY SUCKY forking resolver for name resolution */
+#undef USE_FORKING_RESOLVER
+
 /* use gethostbyaddr for name resolution */
 #undef USE_GETHOSTBYADDR
 

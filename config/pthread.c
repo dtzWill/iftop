@@ -3,7 +3,7 @@
  * Tiny test program to see whether POSIX threads work.
  */
 
-static const char rcsid[] = "$Id: pthread.c,v 1.1 2002/11/04 12:27:35 chris Exp $";
+static const char rcsid[] = "$Id: pthread.c,v 1.2 2003/08/27 18:29:27 pdw Exp $";
 
 #include <sys/types.h>
 
@@ -24,7 +24,7 @@ void *worker_thread(void *v) {
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mtx);
     while (1)
-        pause();
+        pthread_testcancel();
 }
 
 /* Start a thread, and have it set a variable to some other value, then signal
