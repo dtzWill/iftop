@@ -842,8 +842,9 @@ Optional Packages:
   --with-resolver=TYPE    Technique iftop should use for name resolution. Valid
                           options are netdb, netdb_1thread (for systems without
                           working gethostbyaddr_r), ares for the MIT ARES
-                          asynchronous resolver library, or none if you don't
-                          need any name resolution.
+                          asynchronous resolver library, forking for the REALLY
+                          SUCKY forking resolver, or none if you don't need any
+                          name resolution.
                           default=netdb
   --with-libpcap=WHERE    Where the libpcap packet-capture library is found.
                           The pcap library should be installed  in WHERE/lib,
@@ -1553,7 +1554,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.14pre2"
+ VERSION="0.15"
 
 
 cat >>confdefs.h <<_ACEOF
@@ -5789,7 +5790,7 @@ if test "$ac_cv_search_gethostbyaddr_r" != no; then
   test "$ac_cv_search_gethostbyaddr_r" = "none required" || LIBS="$ac_cv_search_gethostbyaddr_r $LIBS"
 
 else
-  resolver=netdb_1thread
+  resolver=forking
 fi
 
 
@@ -5869,9 +5870,9 @@ echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
 ( exit $ac_status )
 
-                                                        echo "$as_me:$LINENO: result: no idea; dropping back to gethostbyaddr" >&5
-echo "${ECHO_T}no idea; dropping back to gethostbyaddr" >&6
-                            resolver=netdb_1thread
+                                                        echo "$as_me:$LINENO: result: no idea; dropping back to the forking resolver" >&5
+echo "${ECHO_T}no idea; dropping back to the forking resolver" >&6
+                            resolver=forking
 
 fi
 rm -f core core.* *.core conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
@@ -6007,15 +6008,15 @@ _ACEOF
 
 else
 
-                echo "$as_me:$LINENO: result: can't find ARES; dropping back to gethostbyaddr" >&5
-echo "${ECHO_T}can't find ARES; dropping back to gethostbyaddr" >&6
-        resolver=netdb_1thread
+                echo "$as_me:$LINENO: result: can't find ARES; dropping back to the forking resolver" >&5
+echo "${ECHO_T}can't find ARES; dropping back to the forking resolver" >&6
+        resolver=forking
 fi
 
 fi
 
 
-if test x$resolver = xnetdb_1thread ; then
+if test x$resolver = xnetdb_1thread || test x$resolver = xforking ; then
     echo "$as_me:$LINENO: checking for library containing gethostbyaddr" >&5
 echo $ECHO_N "checking for library containing gethostbyaddr... $ECHO_C" >&6
 if test "${ac_cv_search_gethostbyaddr+set}" = set; then
@@ -6125,14 +6126,23 @@ if test "$ac_cv_search_gethostbyaddr" != no; then
 else
 
         { { echo "$as_me:$LINENO: error: not even gethostbyaddr is available
-  What sort of UNIX system is this, anyway?" >&5
+  What sort of UNIX system is this, anyway?
+
+  You will have to recompile with no name resolution at all.
+" >&5
 echo "$as_me: error: not even gethostbyaddr is available
-  What sort of UNIX system is this, anyway?" >&2;}
+  What sort of UNIX system is this, anyway?
+
+  You will have to recompile with no name resolution at all.
+" >&2;}
    { (exit 1); exit 1; }; }
+
 
 
 fi
 
+
+    if test x$resolver = xnetdb_1thread ; then
 
         { echo "$as_me:$LINENO: WARNING: using single-threaded resolver with gethostbyaddr
   Consider obtaining ARES or a machine with a working gethostbyaddr_r." >&5
@@ -6144,6 +6154,13 @@ cat >>confdefs.h <<\_ACEOF
 #define USE_GETHOSTBYADDR 1
 _ACEOF
 
+    else
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_FORKING_RESOLVER 1
+_ACEOF
+
+    fi
 fi
 
 
@@ -6213,7 +6230,7 @@ echo "$as_me: error: can't find pcap.h
    { (exit 1); exit 1; }; }
 else
         if test x$test_prefix != x ; then
-        LDFLAGS="$LDFLAGS -L$test_prefix"
+        LDFLAGS="$LDFLAGS -L$test_prefix/lib"
     fi
 
 echo "$as_me:$LINENO: checking for pcap_open_live in -lpcap" >&5
@@ -7794,3 +7811,43 @@ if test "$no_create" != yes; then
 fi
 
 
+if echo $VERSION | grep 'pre' ; then
+	{ echo "$as_me:$LINENO: WARNING:
+******************************************************************************
+
+This is a pre-release version.  Pre-releases are subject to limited
+announcements, and therefore limited circulation, as a means of testing
+the more widely circulated final releases.
+
+Please do not be surprised if this release is utterly, utterly broken.  If you
+do find this release to be utterly, utterly broken, do not assume that someone
+else has spotted it.  Instead, please drop a note on the mailing list,
+or a brief email to me on pdw@ex-parrot.com
+
+Thank you for taking the time to be the testing phase of this development
+process.
+
+Paul Warren
+
+******************************************************************************
+" >&5
+echo "$as_me: WARNING:
+******************************************************************************
+
+This is a pre-release version.  Pre-releases are subject to limited
+announcements, and therefore limited circulation, as a means of testing
+the more widely circulated final releases.
+
+Please do not be surprised if this release is utterly, utterly broken.  If you
+do find this release to be utterly, utterly broken, do not assume that someone
+else has spotted it.  Instead, please drop a note on the mailing list,
+or a brief email to me on pdw@ex-parrot.com
+
+Thank you for taking the time to be the testing phase of this development
+process.
+
+Paul Warren
+
+******************************************************************************
+" >&2;}
+fi
