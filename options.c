@@ -6,22 +6,44 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <net/if.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
 
 #include "iftop.h"
 #include "options.h"
 
 options_t options;
 
-char optstr[] = "+i:f:n:dhpbP";
+char optstr[] = "+i:f:n:dhpbBP";
 
 /* Global options. */
 
+/* Selecting an interface on which to listen: */
+
+/* This is a list of interface name prefixes which are `bad' in the sense
+ * that they don't refer to interfaces of external type on which we are
+ * likely to want to listen. We also compare candidate interfaces to lo. */
+static char *bad_interface_names[] = {
+            "lo:",
+            "dummy",
+            "vmnet",
+            NULL        /* last entry must be NULL */
+        };
+
+static int is_bad_interface_name(char *i) {
+    char **p;
+    for (p = bad_interface_names; *p; ++p)
+        if (strncmp(i, *p, strlen(*p)) == 0)
+            return 1;
+    return 0;
+}
+
+/* This finds the first interface which is up and is not the loopback
+ * interface or one of the interface types listed in bad_interface_names. */
 static char *get_first_interface(void) {
     int s, size = 1;
     struct ifreq *ifr;
@@ -42,7 +64,7 @@ static char *get_first_interface(void) {
     } while (size * sizeof *ifc.ifc_req <= ifc.ifc_len);
     /* Ugly. */
     for (ifr = ifc.ifc_req; (char*)ifr < (char*)ifc.ifc_req + ifc.ifc_len; ++ifr) {
-        if (strcmp(ifr->ifr_name, "lo") != 0 && strncmp(ifr->ifr_name, "dummy", 5) != 0
+        if (strcmp(ifr->ifr_name, "lo") != 0 && !is_bad_interface_name(ifr->ifr_name)
             && ioctl(s, SIOCGIFFLAGS, ifr) == 0 && ifr->ifr_flags & IFF_UP) {
             i = xstrdup(ifr->ifr_name);
             break;
@@ -64,12 +86,15 @@ static void set_defaults() {
     inet_aton("10.0.1.0", &options.netfilternet);
     inet_aton("255.255.255.0", &options.netfiltermask);
     options.dnsresolution = 1;
+    options.portresolution = 1;
     options.promiscuous = 0;
     options.showbars = 1;
     options.showports = OPTION_PORTS_OFF;
     options.aggregate_src = 0;
     options.aggregate_dest = 0;
     options.paused = 0;
+    options.showhelp = 0;
+    options.bandwidth_in_bytes = 0;
 }
 
 static void die(char *msg) {
@@ -132,7 +157,8 @@ static void usage(FILE *fp) {
 "   -p                  run in promiscuous mode (show traffic between other\n"
 "                       hosts on the same network segment)\n"
 "   -b                  don't display a bar graph of traffic\n"
-"   -i interface        listen on named interface (default: eth0)\n"
+"   -B                  Display bandwidth in bytes\n"
+"   -i interface        listen on named interface\n"
 "   -f filter code      use filter code to select packets to count\n"
 "                       (default: none, but only IP packets are counted)\n"
 "   -n net/mask         show traffic flows in/out of network\n"
@@ -183,6 +209,9 @@ void options_read(int argc, char **argv) {
                 options.showbars = 0;
                 break;
 
+            case 'B':
+                options.bandwidth_in_bytes = 1;
+                break;
 
             case '?':
                 fprintf(stderr, "iftop: unknown option -%c\n", optopt);

@@ -2,7 +2,7 @@
 # Makefile:
 # Makefile for iftop.
 #
-# $Id: Makefile,v 1.31 2002/10/11 15:21:35 pdw Exp $
+# $Id: Makefile,v 1.39 2002/10/22 11:15:31 pdw Exp $
 #
 
 # C compiler to use.
@@ -10,12 +10,14 @@
 
 # Give the location of pcap.h here:
 CFLAGS += -I/usr/include/pcap
+# CFLAGS += -I/usr/pkg/include
 # CFLAGS += -pg -a
 
 # Give the location of libpcap here if it's not in one of the standard
 # directories:
 #LDFLAGS += -L/usr/local/lib
 # LDFLAGS += -pg -a
+LDFLAGS += -pthread
 
 # PREFIX specifies the base directory for the installation.
 PREFIX = /usr/local
@@ -29,15 +31,15 @@ MANDIR = man
 #MANDIR = share/man     # FHS-ish
 
 # You shouldn't need to change anything below this point.
-VERSION = 0.8pre3
+VERSION = 0.9
 CFLAGS  += -g -Wall "-DIFTOP_VERSION=\"$(VERSION)\""
 LDFLAGS += -g 
-LDLIBS += -lpcap -lpthread -lcurses -lm
+LDLIBS += -lpcap -lcurses -lm
 
 SRCS = iftop.c addr_hash.c hash.c ns_hash.c resolver.c ui.c util.c sorted_list.c\
        options.c serv_hash.c threadprof.c
 HDRS = addr_hash.h hash.h iftop.h ns_hash.h resolver.h sorted_list.h ui.h options.h sll.h\
-       serv_hash.h threadprof.h
+       serv_hash.h threadprof.h ether.h ip.h tcp.h
 TXTS = README CHANGES INSTALL TODO iftop.8 COPYING
 SPECFILE = iftop.spec
 
@@ -57,7 +59,7 @@ uninstall:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *~ *.o core iftop
+	rm -f *~ *.o core iftop iftop.spec
 
 tarball: depend $(SRCS) $(HDRS) $(TXTS) $(SPECFILE)
 	mkdir iftop-$(VERSION)
@@ -73,5 +75,9 @@ depend: $(SRCS)
 
 nodepend:
 	rm -f depend
+
+iftop.spec: iftop.spec.in Makefile
+	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
+  
         
 include depend

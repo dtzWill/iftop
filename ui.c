@@ -24,9 +24,31 @@
 #define HISTORY_DIVISIONS   3
 #define BARGRAPH_INTERVAL   1   /* which division used for bars. */
 
+#define HELP_MESSAGE \
+"Host display:\n"\
+" r - toggle DNS host resolution \n"\
+" s - toggle show source host\n"\
+" d - toggle show destination host\n"\
+"\nPort display:\n"\
+" R - toggle service resolution \n"\
+" S - toggle show source port \n"\
+" D - toggle show destination port\n"\
+" p - toggle port display\n"\
+"\nGeneral:\n"\
+" P - pause display\n"\
+" h - toggle this help display\n"\
+" b - toggle bar graph display\n"\
+" q - quit\n"\
+"\niftop, version " IFTOP_VERSION 
+
+
+
 /* 1, 15 and 60 seconds */
 int history_divs[HISTORY_DIVISIONS] = {1, 5, 20};
 
+#define UNIT_DIVISIONS 4
+char* unit_bits[UNIT_DIVISIONS] =  { "b", "Kb", "Mb", "Gb"};
+char* unit_bytes[UNIT_DIVISIONS] =  { "B", "KB", "MB", "GB"};
 
 typedef struct host_pair_line_tag {
     addr_pair ap;
@@ -63,27 +85,31 @@ int screen_line_compare(void* a, void* b) {
 }
 
 void readable_size(float n, char* buf, int bsize, int ksize, int bytes) {
-    if(n >= 100 * ksize * ksize) {
-       snprintf(buf, bsize, " %4.0f%s", n / (ksize * ksize), bytes ? "MB" : "M"); 
+
+    int i = 0;
+    float size = 1;
+
+    /* Convert to bits? */
+    if(bytes == 0) { 
+      n *= 8;
     }
-    else if(n >= 10 * ksize * ksize) {
-       snprintf(buf, bsize, " %4.1f%s", n / (ksize * ksize), bytes ? "MB" : "M"); 
-    }
-    if(n >= ksize * ksize) {
-       snprintf(buf, bsize, " %4.2f%s", n / (ksize * ksize), bytes ? "MB" : "M" ); 
-    }
-    else if(n >= 100 * ksize) {
-       snprintf(buf, bsize, " %4.0f%s", n / ksize, bytes ? "KB" : "K" ); 
-    }
-    else if(n >= 10 * ksize) {
-       snprintf(buf, bsize, " %4.1f%s", n / ksize, bytes ? "KB" : "K" ); 
-    }
-    else if(n >= ksize) {
-       snprintf(buf, bsize, " %4.2f%s", n / ksize, bytes ? "KB" : "K" ); 
-    }
-    else {
-       snprintf(buf, bsize, " %4.0f%s", n, bytes ? "B" : "b"); 
-    }
+
+    while(1) {
+      if(n < size * 1000 || i >= UNIT_DIVISIONS - 1) {
+        snprintf(buf, bsize, " %4.0f%s", n / size, bytes ? unit_bytes[i] : unit_bits[i]); 
+        break;
+      }
+      i++;
+      size *= ksize;
+      if(n < size * 10) {
+        snprintf(buf, bsize, " %4.2f%s", n / size, bytes ? unit_bytes[i] : unit_bits[i]); 
+        break;
+      }
+      else if(n < size * 100) {
+        snprintf(buf, bsize, " %4.1f%s", n / size, bytes ? unit_bytes[i] : unit_bits[i]); 
+        break;
+      }
+  }
 }
 
 
@@ -119,7 +145,7 @@ static void draw_bar_scale(int* y) {
         for (i = 1; i <= scale[rateidx].max; i *= scale[rateidx].interval) {
             char s[40], *p;
             int x;
-            readable_size(i, s, sizeof s, 1000, 0);
+            readable_size(i / 8, s, sizeof s, 1000, 0);
             p = s + strspn(s, " ");
             x = get_bar_length(i);
             mvaddch(*y + 1, x, ACS_BTEE);
@@ -150,10 +176,10 @@ void draw_line_totals(int y, host_pair_line* line) {
 
     for(j = 0; j < HISTORY_DIVISIONS; j++) {
         t = history_length(j);
-        readable_size(8 * line->sent[j] / t, buf, 10, 1024, 0);
+        readable_size(line->sent[j] / t, buf, 10, 1024, options.bandwidth_in_bytes);
         mvaddstr(y, x, buf);
 
-        readable_size(8 * line->recv[j] / t, buf, 10, 1024, 0);
+        readable_size(line->recv[j] / t, buf, 10, 1024, options.bandwidth_in_bytes);
         mvaddstr(y+1, x, buf);
         x += 8;
     }
@@ -326,7 +352,7 @@ void sprint_host(char * line, struct in_addr* addr, unsigned int port, unsigned 
     if(port != 0) {
       skey.port = port;
       skey.protocol = protocol;
-      if(hash_find(service_hash, &skey, (void**)&s_name) == HASH_STATUS_OK) {
+      if(options.portresolution && hash_find(service_hash, &skey, (void**)&s_name) == HASH_STATUS_OK) {
         snprintf(service, HOSTNAME_LENGTH, ":%s", s_name);
       }
       else {
@@ -382,52 +408,57 @@ void ui_print() {
     attron(A_REVERSE);
     addstr(" s ");
     attroff(A_REVERSE);
-    addstr(options.aggregate_src ? " aggregate off "
-                         : " aggregate src ");
+    addstr(options.aggregate_src ? " show src "
+                         : " hide src ");
 
     attron(A_REVERSE);
     addstr(" d ");
     attroff(A_REVERSE);
-    addstr(options.aggregate_dest ? " aggregate off  "
-                         : " aggregate dest ");
+    addstr(options.aggregate_dest ? " show dest "
+                         : " hide dest ");
 
     draw_bar_scale(&y);
 
+    if(options.showhelp) {
+      mvaddstr(y,0,HELP_MESSAGE);
+    }
+    else {
 
 
-    /* Screen layout: we have 2 * HISTORY_DIVISIONS 6-character wide history
-     * items, and so can use COLS - 12 * HISTORY_DIVISIONS to print the two
-     * host names. */
+      /* Screen layout: we have 2 * HISTORY_DIVISIONS 6-character wide history
+       * items, and so can use COLS - 12 * HISTORY_DIVISIONS to print the two
+       * host names. */
 
-    while((nn = sorted_list_next_item(&screen_list, nn)) != NULL) {
-        int x = 0, L;
-        host_pair_line* screen_line = (host_pair_line*)nn->data;
+      while((nn = sorted_list_next_item(&screen_list, nn)) != NULL) {
+          int x = 0, L;
+          host_pair_line* screen_line = (host_pair_line*)nn->data;
 
-        if(y < LINES - 4) {
-            L = (COLS - 8 * HISTORY_DIVISIONS - 4) / 2;
-            if(L > sizeof hostname) {
-                L = sizeof hostname;
-            }
+          if(y < LINES - 4) {
+              L = (COLS - 8 * HISTORY_DIVISIONS - 4) / 2;
+              if(L > sizeof hostname) {
+                  L = sizeof hostname;
+              }
 
-            sprint_host(line, &(screen_line->ap.src), screen_line->ap.src_port, screen_line->ap.protocol, L);
+              sprint_host(line, &(screen_line->ap.src), screen_line->ap.src_port, screen_line->ap.protocol, L);
 
-            //sprintf(line, "%-*s", L, hostname);
-            mvaddstr(y, x, line);
-            x += L;
+              //sprintf(line, "%-*s", L, hostname);
+              mvaddstr(y, x, line);
+              x += L;
 
-            mvaddstr(y, x, " => ");
-            mvaddstr(y+1, x, " <= ");
+              mvaddstr(y, x, " => ");
+              mvaddstr(y+1, x, " <= ");
 
-            x += 4;
+              x += 4;
 
-            sprint_host(line, &(screen_line->ap.dst), screen_line->ap.dst_port, screen_line->ap.protocol, L);
+              sprint_host(line, &(screen_line->ap.dst), screen_line->ap.dst_port, screen_line->ap.protocol, L);
 
-            mvaddstr(y, x, line);
-            
-            draw_line_totals(y, screen_line);
+              mvaddstr(y, x, line);
+              
+              draw_line_totals(y, screen_line);
 
-        }
-        y += 2;
+          }
+          y += 2;
+      }
     }
 
 
@@ -436,13 +467,13 @@ void ui_print() {
     mvaddstr(y, 0, "total: ");
     mvaddstr(y+1, 0, " peak: ");
 
-    readable_size((totals.recv[0] + totals.sent[0]) * 8 / RESOLUTION, line, 10, 1024, 0);
+    readable_size((totals.recv[0] + totals.sent[0]) / RESOLUTION, line, 10, 1024, options.bandwidth_in_bytes);
     mvaddstr(y, 8, line);
 
-    readable_size(peaktotal * 8 / RESOLUTION, line, 10, 1024, 0);
+    readable_size(peaktotal / RESOLUTION, line, 10, 1024, options.bandwidth_in_bytes);
     mvaddstr(y+1, 8, line);
 
-    readable_size((peakrecv + peaksent) * 8 / RESOLUTION, line, 10, 1024, 0);
+    readable_size((peakrecv + peaksent) / RESOLUTION, line, 10, 1024, options.bandwidth_in_bytes);
     mvaddstr(y+1, 8, line);
 
     mvaddstr(y, 18, "TX: ");
@@ -458,10 +489,10 @@ void ui_print() {
     /* Peak traffic */
     mvaddstr(y, 33, "peaks: ");
 
-    readable_size(peaksent * 8 / RESOLUTION, line, 10, 1024, 0);
+    readable_size(peaksent / RESOLUTION, line, 10, 1024, options.bandwidth_in_bytes);
     mvaddstr(y, 39, line);
 
-    readable_size(peakrecv * 8 / RESOLUTION, line, 10, 1024, 0);
+    readable_size(peakrecv / RESOLUTION, line, 10, 1024, options.bandwidth_in_bytes);
     mvaddstr(y+1, 39, line);
 
     mvaddstr(y, COLS - 8 * HISTORY_DIVISIONS - 8, "totals:");
@@ -508,6 +539,16 @@ void ui_loop() {
 
             case 'r':
                 options.dnsresolution = !options.dnsresolution;
+                tick(1);
+                break;
+
+            case 'R':
+                options.portresolution = !options.portresolution;
+                tick(1);
+                break;
+
+            case 'h':
+                options.showhelp = !options.showhelp;
                 tick(1);
                 break;
 

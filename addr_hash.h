@@ -6,9 +6,9 @@
 #ifndef __ADDR_HASH_H_ /* include guard */
 #define __ADDR_HASH_H_
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include "hash.h"
 
 typedef struct {
