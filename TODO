@@ -1,5 +1,5 @@
 Things to do for iftop
-$Id: TODO,v 1.5 2002/04/02 17:33:10 chris Exp $
+$Id: TODO,v 1.6 2002/04/12 19:51:20 pdw Exp $
 
 * Interface types other than ethernet? Should at least detect these....
 
