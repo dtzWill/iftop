@@ -1,13 +1,5 @@
 Change log for iftop
-$Id: CHANGES,v 1.27 2003/01/08 12:22:12 pdw Exp $
-
-0.11 08/01/03
-
-Added support for token ring networks
-Token ring network direction determination
-    Martin Garton <Martin.Garton@DCSTRANS.COM>
-Added autoconf/automake build system
-Improved network interface auto selection
+$Id: CHANGES,v 1.23 2002/10/29 08:51:25 pdw Exp $
 
 0.10 29/10/02
 

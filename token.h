@@ -1,4 +1,4 @@
-/* @(#) $Header: /home/cvs/iftop/token.h,v 1.1 2002/10/31 16:53:32 pdw Exp $ (LBL) */
+/* @(#) $Header: /tcpdump/master/tcpdump/token.h,v 1.3 2000/10/03 02:55:03 itojun Exp $ (LBL) */
 /*
  * Copyright (c) 1998, Larry Lile
  * All rights reserved.

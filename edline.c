@@ -4,7 +4,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: edline.c,v 1.2 2002/11/04 12:27:35 chris Exp $";
+static const char rcsid[] = "$Id: edline.c,v 1.1 2002/10/25 08:24:49 chris Exp $";
 
 #include <ctype.h>
 #include <curses.h>
@@ -88,9 +88,9 @@ char *edline(int linenum, const char *prompt, const char *initial) {
 
             case 23:    /* ^W */
                 for (i = pos; i > 0; --i)
-                    if (!isspace((int)str[i])) break;
+                    if (!isspace(str[i])) break;
                 for (; i > 0; --i)
-                    if (isspace((int)str[i])) break;
+                    if (isspace(str[i])) break;
                 if (i != pos) {
                     memmove(str + i, str + pos, strlen(str + pos) + 1);
                     pos = i;

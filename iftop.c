@@ -3,15 +3,7 @@
  *
  */
 
-#include "integers.h"
-
-#if defined(HAVE_PCAP_H)
-#   include <pcap.h>
-#elif defined(HAVE_PCAP_PCAP_H)
-#   include <pcap/pcap.h>
-#else
-#   error No pcap.h
-#endif
+#include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -40,8 +32,6 @@
 #include "tcp.h"
 #include "token.h"
 #include "llc.h"
-#include "extract.h"
-#include "ethertype.h"
 
 
 unsigned char if_hw_addr[6];    /* ethernet address of interface. */
@@ -269,57 +259,21 @@ static void handle_raw_packet(unsigned char* args, const struct pcap_pkthdr* pkt
     handle_ip_packet((struct ip*)packet, -1);
 }
 
-static void handle_llc_packet(const struct llc* llc, int dir) {
-
-    struct ip* ip = (struct ip*)((void*)llc + sizeof(struct llc));
-
-    /* Taken from tcpdump/print-llc.c */
-    if(llc->ssap == LLCSAP_SNAP && llc->dsap == LLCSAP_SNAP
-       && llc->llcui == LLC_UI) {
-        u_int32_t orgcode;
-        register u_short et;
-        orgcode = EXTRACT_24BITS(&llc->llc_orgcode[0]);
-        et = EXTRACT_16BITS(&llc->llc_ethertype[0]);
-        switch(orgcode) {
-          case OUI_ENCAP_ETHER:
-          case OUI_CISCO_90:
-            handle_ip_packet(ip, dir);
-            break;
-          case OUI_APPLETALK:
-            if(et == ETHERTYPE_ATALK) {
-              handle_ip_packet(ip, dir);
-            }
-            break;
-          default:
-            /* Not a lot we can do */
-        }
-    }
-}
-
 static void handle_tokenring_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
 {
+    struct timespec t;
     struct token_header *trp;
-    int dir = -1;
     trp = (struct token_header *)packet;
 
     if(IS_SOURCE_ROUTED(trp)) {
       packet += RIF_LENGTH(trp);
     }
     packet += TOKEN_HDRLEN;
-
-    if(memcmp(trp->token_shost, if_hw_addr, 6) == 0 ) {
-      /* packet leaving this i/f */
-      dir = 1;
-    } 
-        else if(memcmp(trp->token_dhost, if_hw_addr, 6) == 0 || memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", trp->token_dhost, 6) == 0) {
-      /* packet entering this i/f */
-      dir = 0;
-    }
-
-    /* Only know how to deal with LLC encapsulated packets */
-    if(FRAME_TYPE(trp) == TOKEN_FC_LLC) {
-      handle_llc_packet((struct llc*)packet, dir);
-    }
+    packet += sizeof(struct llc);
+    handle_ip_packet((struct ip*)packet, -1);
+    t.tv_sec = 0;
+    t.tv_nsec = 1000;
+    //nanosleep(&t, NULL);
 }
 
 #ifdef DLT_LINUX_SLL
@@ -348,9 +302,9 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
 {
     struct ether_header *eptr;
     eptr = (struct ether_header*)packet;
-
+       
     tick(0);
-
+    
     if(ntohs(eptr->ether_type) == ETHERTYPE_IP) {
         struct ip* iptr;
         int dir = -1;
@@ -432,7 +386,7 @@ void packet_init() {
     resolver_initialise();
 
     pd = pcap_open_live(options.interface, CAPTURE_LENGTH, options.promiscuous, 1000, errbuf);
-    // DEBUG: pd = pcap_open_offline("tcpdump.out", errbuf);
+    //pd = pcap_open_offline("tcpdump.out", errbuf);
     if(pd == NULL) { 
         fprintf(stderr, "pcap_open_live(%s): %s\n", options.interface, errbuf); 
         exit(1);
@@ -472,7 +426,7 @@ void packet_init() {
 /* packet_loop:
  * Worker function for packet capture thread. */
 void packet_loop(void* ptr) {
-    pcap_loop(pd,-1,(pcap_handler)packet_handler,NULL);
+    pcap_loop(pd,0,(pcap_handler)packet_handler,NULL);
 }
 
 
