@@ -8,7 +8,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: stringmap.c,v 1.1 2003/10/19 06:44:33 pdw Exp $";
+static const char rcsid[] = "$Id: stringmap.c,v 1.2 2003/11/04 11:57:45 chris Exp $";
 
 
 #include <stdlib.h>
@@ -16,7 +16,7 @@ static const char rcsid[] = "$Id: stringmap.c,v 1.1 2003/10/19 06:44:33 pdw Exp 
 
 #include "stringmap.h"
 #include "vector.h"
-/*include "util.h"*/
+#include "util.h"
 
 /* stringmap_new:
  * Allocate memory for a new stringmap. */

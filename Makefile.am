@@ -7,7 +7,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.4 2003/10/19 06:44:33 pdw Exp $
+# $Id: Makefile.am,v 1.5 2003/10/21 22:25:48 pdw Exp $
 #
 
 sbin_PROGRAMS = iftop

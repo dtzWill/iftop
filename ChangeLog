@@ -1,5 +1,5 @@
 Change log for iftop
-$Id: ChangeLog,v 1.11 2003/10/20 21:44:24 pdw Exp $
+$Id: ChangeLog,v 1.12 2003/10/24 18:40:45 pdw Exp $
 
 Attributions apply to all preceding items up to the next blank line.
 Unattributed items are by Paul Warren and Chris Lightfoot.
@@ -14,6 +14,10 @@ Unattributed items are by Paul Warren and Chris Lightfoot.
 
 * Fixed the search for libpcap in the configure script
     Thomas Schwinge <tschwinge@gmx.net>
+
+* Updated RPM spec file
+    Richard Lucassen <spamtrap@lucassen.org>
+
 
 0.14 06/09/03
 * Added forking resolver as fall-back resolver

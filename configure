@@ -1554,7 +1554,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.15pre3"
+ VERSION="0.15pre4"
 
 
 cat >>confdefs.h <<_ACEOF
@@ -7811,3 +7811,43 @@ if test "$no_create" != yes; then
 fi
 
 
+if echo $VERSION | grep 'pre' ; then
+	{ echo "$as_me:$LINENO: WARNING:
+******************************************************************************
+
+This is a pre-release version.  Pre-releases are subject to limited
+announcements, and therefore limited circulation, as a means of testing
+the more widely circulated final releases.
+
+Please do not be surprised if this release is utterly, utterly broken.  If you
+do find this release to be utterly, utterly broken, do not assume that someone
+else has spotted it.  Instead, please drop a note on the mailing list,
+or a brief email to me on pdw@ex-parrot.com
+
+Thank you for taking the time to be the testing phase of this development
+process.
+
+Paul Warren
+
+******************************************************************************
+" >&5
+echo "$as_me: WARNING:
+******************************************************************************
+
+This is a pre-release version.  Pre-releases are subject to limited
+announcements, and therefore limited circulation, as a means of testing
+the more widely circulated final releases.
+
+Please do not be surprised if this release is utterly, utterly broken.  If you
+do find this release to be utterly, utterly broken, do not assume that someone
+else has spotted it.  Instead, please drop a note on the mailing list,
+or a brief email to me on pdw@ex-parrot.com
+
+Thank you for taking the time to be the testing phase of this development
+process.
+
+Paul Warren
+
+******************************************************************************
+" >&2;}
+fi
