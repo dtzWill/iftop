@@ -6,21 +6,19 @@
 #ifndef __IFTOP_H_ /* include guard */
 #define __IFTOP_H_
 
-#include "config.h"
-
-/* 40 / 2  */
+/* 60 / 3  */
 #define HISTORY_LENGTH  20
 #define RESOLUTION 2
 
 typedef struct {
     long recv[HISTORY_LENGTH];
     long sent[HISTORY_LENGTH];
-    double long total_sent;
-    double long total_recv;
+    long total_sent;
+    long total_recv;
     int last_write;
 } history_type;
 
-void tick(int print);
+void tick();
 
 void *xmalloc(size_t n);
 void *xcalloc(size_t n, size_t m);
@@ -34,6 +32,5 @@ void ui_init(void);
 
 /* options.c */
 void options_read(int argc, char **argv);
-
 
 #endif /* __IFTOP_H_ */
