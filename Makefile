@@ -2,7 +2,7 @@
 # Makefile:
 # Makefile for iftop.
 #
-# $Id: Makefile,v 1.23 2002/04/16 20:16:39 pdw Exp $
+# $Id: Makefile,v 1.24 2002/04/18 20:38:47 pdw Exp $
 #
 
 # C compiler to use.
@@ -27,7 +27,7 @@ MANDIR = man
 #MANDIR = share/man     # FHS-ish
 
 # You shouldn't need to change anything below this point.
-VERSION = 0.4
+VERSION = 0.5
 CFLAGS  += -g -Wall "-DIFTOP_VERSION=\"$(VERSION)\""
 LDFLAGS += -g 
 LDLIBS += -lpcap -lpthread -lcurses -lm

@@ -6,4 +6,4 @@ resolver.o: resolver.c ns_hash.h hash.h iftop.h
 ui.o: ui.c addr_hash.h hash.h iftop.h resolver.h sorted_list.h options.h
 util.o: util.c iftop.h
 sorted_list.o: sorted_list.c sorted_list.h iftop.h
-options.o: options.c options.h
+options.o: options.c iftop.h options.h
