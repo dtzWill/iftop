@@ -1,0 +1,91 @@
+.TH IFTOP 8
+.\"
+.\" iftop.8:
+.\" Manual page for iftop.
+.\"
+.\" $Id: iftop.8,v 1.7 2002/03/29 14:33:53 pdw Exp $
+.\"
+
+.SH NAME
+iftop - display bandwidth usage on an interface by host
+
+.SH SYNOPSIS
+\fBiftop\fP \fB-h\fP |
+[\fB-d\fP] [\fB-p\fP] [\fB-i\fP \fIinterface\fP] [\fB-f\fP \fIfilter code\fP]
+
+.SH DESCRIPTION
+\fBiftop\fP listens to network traffic on a named \fIinterface\fP, or \fBeth0\fP
+if none is specified, and displays a table of current bandwidth usage by pairs
+of hosts.
+
+When run, \fBiftop\fP displays, for each pair of hosts, the rate at which data
+is sent and received averaged over 2, 10 and 40 second intervals. The direction
+of data flow is indicated by arrows, <= and =>. In addition, a simple bar graph
+shows the 10-second average. The pairs of hosts which consume the most bandwidth
+are displayed at the top of the screen, and totals for all hosts are shown at
+the bottom of the screen.
+
+By default, \fBiftop\fP will look up the hostnames associated with addresses it
+finds in packets. This can cause substantial traffic of itself, and may result
+in a confusing display. You may wish to suppress display of DNS traffic by
+using filter code such as \fBnot port domain\fP, or switch it off entirely,
+by using the \fB-d\fP option or by pressing \fBR\fP when the program is running.
+
+Some other filter ideas:
+.TP
+\fBnot ether host ff:ff:ff:ff:ff:ff\fP
+Ignore ethernet broadcast packets.
+.TP
+\fBport http and not host \fP\fIwebcache.example.com\fP
+Count web traffic only, unless it is being directed through a local web cache.
+.TP
+\fBicmp\fP
+How much bandwith are users wasting trying to figure out why the network is
+slow?
+
+.SH OPTIONS
+
+.TP
+\fB-h\fP
+Print a summary of usage.
+.TP
+\fB-d\fP
+Don't do hostname lookups. This setting may be altered at run time.
+.TP
+\fB-p\fP
+Run in promiscuous mode, so that traffic which does not pass directly through
+the specified interface is also counted.
+.TP
+\fB-i\fP \fIinterface\fP
+Listen to packets on \fIinterface\fP.
+.TP
+\fB-f\fP \fIfilter code\fP
+Use \fIfilter code\fP to select the packets to count. Only IP packets are ever
+counted, so the specified code is evaluated as \fB(\fP\fIfilter code\fP\fB) and ip\fP.
+
+.SH SEE ALSO
+.BR tcpdump (8),
+.BR pcap (3),
+.BR driftnet (1)
+
+.SH AUTHOR
+Paul Warren <pdw@ex-parrot.com>
+
+.SH VERSION
+$Id: iftop.8,v 1.7 2002/03/29 14:33:53 pdw Exp $
+
+.SH COPYING
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+

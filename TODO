@@ -1,0 +1,17 @@
+Things to do for iftop
+$Id: TODO,v 1.1 2002/03/28 17:29:42 chris Exp $
+
+* Interface types other than ethernet? Should at least detect these....
+
+* IP types other than v4?
+
+* Which average to use for the bar graph? Show several and peaks? Colours?
+
+* Single keypress firewalling of troublesome connections, a la top(1)'s K
+  to kill?
+
+* Aggregate traffic by source host / dest host rather than just by host pair.
+
+* For promiscuous mode, give a way to define which packets are regarded as
+  `inside' and which `outside' the network.
+
