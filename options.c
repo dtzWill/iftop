@@ -67,7 +67,9 @@ static void set_defaults() {
     options.promiscuous = 0;
     options.showbars = 1;
     options.showports = OPTION_PORTS_OFF;
-    options.aggregate = OPTION_AGGREGATE_OFF;
+    options.aggregate_src = 0;
+    options.aggregate_dest = 0;
+    options.paused = 0;
 }
 
 static void die(char *msg) {
@@ -136,7 +138,8 @@ static void usage(FILE *fp) {
 "   -n net/mask         show traffic flows in/out of network\n"
 "   -P                  show ports as well as hosts\n"
 "\n"
-"iftop, version " IFTOP_VERSION " copyright (c) 2002 Paul Warren <pdw@ex-parrot.com>\n"
+"iftop, version " IFTOP_VERSION "\n"
+"copyright (c) 2002 Paul Warren <pdw@ex-parrot.com> and contributors\n"
             );
 }
 

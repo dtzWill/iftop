@@ -181,7 +181,7 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
          * it was picked up in promisc mode, and account it as incoming.
          */
         else if(iptr->ip_src.s_addr < iptr->ip_dst.s_addr) {
-            assign_addr_pair(&ap, iptr, 0);
+            assign_addr_pair(&ap, iptr, 1);
             direction = 0;
         }
         else {
@@ -346,9 +346,14 @@ void packet_init() {
     else if(dlt == DLT_RAW) {
         packet_handler = handle_raw_packet;
     } 
+/* 
+ * SLL support not available in older libpcaps
+ */
+#ifdef DLT_LINUX_SLL
     else if(dlt == DLT_LINUX_SLL) {
-	packet_handler = handle_cooked_packet;
+      packet_handler = handle_cooked_packet;
     }
+#endif
     else {
         fprintf(stderr, "Unsupported datalink type: %d\n"
                 "Please email pdw@ex-parrot.com, quoting the datalink type and what you were\n"
