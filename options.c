@@ -6,12 +6,12 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <net/if.h>
+#include <sys/ioctl.h>
 
 #include "iftop.h"
 #include "options.h"
