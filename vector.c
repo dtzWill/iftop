@@ -6,7 +6,7 @@
  *
  */
 
-static const char rcsid[] = "$Id: vector.c,v 1.2 2003/11/04 11:57:45 chris Exp $";
+static const char rcsid[] = "$Id: vector.c,v 1.3 2003/11/07 02:16:41 pdw Exp $";
 
 #ifdef HAVE_CONFIG_H
 /*include "configuration.h"*/

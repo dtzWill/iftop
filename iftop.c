@@ -187,6 +187,10 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
 {
     int direction = 0; /* incoming */
     history_type* ht;
+    union {
+	history_type **ht_pp;
+	void **void_pp;
+    } u_ht = { &ht };
     addr_pair ap;
     int len;
 
@@ -261,7 +265,7 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
     resolve(&iptr->ip_dst, NULL, 0);
     resolve(&iptr->ip_src, NULL, 0);
 
-    if(hash_find(history, &ap, (void**)&ht) == HASH_STATUS_KEY_NOT_FOUND) {
+    if(hash_find(history, &ap, u_ht.void_pp) == HASH_STATUS_KEY_NOT_FOUND) {
         ht = history_create();
         hash_insert(history, &ap, ht);
     }
@@ -317,7 +321,7 @@ static void handle_llc_packet(const struct llc* llc, int dir) {
               handle_ip_packet(ip, dir);
             }
             break;
-          default:
+          default:;
             /* Not a lot we can do */
         }
     }
@@ -477,7 +481,7 @@ void packet_init() {
     if(dlt == DLT_EN10MB) {
         packet_handler = handle_eth_packet;
     }
-    else if(dlt == DLT_RAW) {
+    else if(dlt == DLT_RAW || dlt == DLT_NULL) {
         packet_handler = handle_raw_packet;
     } 
     else if(dlt == DLT_IEEE802) {

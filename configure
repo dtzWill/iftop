@@ -1554,7 +1554,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.15pre5"
+ VERSION="0.16"
 
 
 cat >>confdefs.h <<_ACEOF

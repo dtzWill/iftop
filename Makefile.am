@@ -7,7 +7,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.7 2003/11/06 23:37:20 chris Exp $
+# $Id: Makefile.am,v 1.8 2003/11/10 22:16:55 pdw Exp $
 #
 
 sbin_PROGRAMS = iftop
@@ -31,7 +31,7 @@ SUBDIRS = config
 iftop.cat: iftop.8
 	(echo -e ".pl 1100i" ; cat iftop.8 ; echo ".pl \n(nlu+10") | groff -Tascii -man > iftop.cat
 
-iftop.spec: iftop.spec.in
+iftop.spec: iftop.spec.in configure.in
 	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
 
 ## These need to be distributed along with configure:
