@@ -23,9 +23,7 @@
 #include "resolver.h"
 #include "ui.h"
 #include "options.h"
-#ifdef DLT_LINUX_SLL
 #include "sll.h"
-#endif /* DLT_LINUX_SLL */
 #include "threadprof.h"
 #include "ether.h"
 #include "ip.h"
@@ -134,7 +132,7 @@ void assign_addr_pair(addr_pair* ap, struct ip* iptr, int flip) {
   unsigned short int dst_port = 0;
 
   /* Does this protocol use ports? */
-  if(iptr->ip_p == IPPROTO_TCP || iptr->ip_p == IPPROTO_UDP) {
+  if(iptr->ip_p == IPPROTO_TCP || IP_HL(iptr) == IPPROTO_UDP) {
     /* We take a slight liberty here by treating UDP the same as TCP */
 
     /* Find the TCP/UDP header */
@@ -255,7 +253,6 @@ static void handle_raw_packet(unsigned char* args, const struct pcap_pkthdr* pkt
     handle_ip_packet((struct ip*)packet, -1);
 }
 
-#ifdef DLT_LINUX_SLL
 static void handle_cooked_packet(unsigned char *args, const struct pcap_pkthdr * thdr, const unsigned char * packet)
 {
     struct sll_header *sptr;
@@ -275,7 +272,6 @@ static void handle_cooked_packet(unsigned char *args, const struct pcap_pkthdr *
     }
     handle_ip_packet((struct ip*)(packet+SLL_HDR_LEN), dir);
 }
-#endif /* DLT_LINUX_SLL */
 
 static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
 {

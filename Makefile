@@ -2,7 +2,7 @@
 # Makefile:
 # Makefile for iftop.
 #
-# $Id: Makefile,v 1.39 2002/10/22 11:15:31 pdw Exp $
+# $Id: Makefile,v 1.35 2002/10/18 17:29:32 pdw Exp $
 #
 
 # C compiler to use.
@@ -17,7 +17,7 @@ CFLAGS += -I/usr/include/pcap
 # directories:
 #LDFLAGS += -L/usr/local/lib
 # LDFLAGS += -pg -a
-LDFLAGS += -pthread
+LDFLAGS = -pthread 
 
 # PREFIX specifies the base directory for the installation.
 PREFIX = /usr/local
@@ -31,7 +31,7 @@ MANDIR = man
 #MANDIR = share/man     # FHS-ish
 
 # You shouldn't need to change anything below this point.
-VERSION = 0.9
+VERSION = 0.9freebsd2
 CFLAGS  += -g -Wall "-DIFTOP_VERSION=\"$(VERSION)\""
 LDFLAGS += -g 
 LDLIBS += -lpcap -lcurses -lm
@@ -59,7 +59,7 @@ uninstall:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *~ *.o core iftop iftop.spec
+	rm -f *~ *.o core iftop
 
 tarball: depend $(SRCS) $(HDRS) $(TXTS) $(SPECFILE)
 	mkdir iftop-$(VERSION)
@@ -75,9 +75,5 @@ depend: $(SRCS)
 
 nodepend:
 	rm -f depend
-
-iftop.spec: iftop.spec.in Makefile
-	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
-  
         
 include depend

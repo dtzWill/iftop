@@ -11,7 +11,6 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 
-
 void resolver_initialise();
 
 void resolve(struct in_addr* addr, char* result, int buflen);
