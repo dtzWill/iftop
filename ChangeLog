@@ -1,7 +1,7 @@
 Change log for iftop
-$Id: ChangeLog,v 1.4 2003/06/11 17:18:36 pdw Exp $
+$Id: ChangeLog,v 1.2 2003/06/08 18:02:44 pdw Exp $
 
-0.13 11/06/03
+0.13
 
 * Fixed configure.in to properly specify libraries without the leading -l
 * Separated the IP/ethernet identifying routine from iftop.c into addrs_ioctl.c
@@ -16,7 +16,6 @@ $Id: ChangeLog,v 1.4 2003/06/11 17:18:36 pdw Exp $
     Jonathan Abbey <jonabbey@ganymeta.org>
 
 * Made errors during IP/MAC address discovery non-fatal
-* Added cummulative line totals ("T")
 
 0.12 21/05/03
 

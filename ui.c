@@ -38,12 +38,12 @@
 " r - toggle DNS host resolution         P - pause display\n"\
 " s - toggle show source host            h - toggle this help display\n"\
 " d - toggle show destination host       b - toggle bar graph display\n"\
-" t - cycle line display mode            T - toggle cummulative line totals\n"\
-"                                        j/k - scroll display\n"\
-"Port display:                           f - edit filter code\n"\
-" R - toggle service resolution          l - set screen filter\n"\
-" S - toggle show source port            ! - shell command\n"\
-" D - toggle show destination port       q - quit\n"\
+" t - cycle line display mode            j/k - scroll display\n"\
+"                                        f - edit filter code\n"\
+"Port display:                           l - set screen filter\n"\
+" R - toggle service resolution          ! - shell command\n"\
+" S - toggle show source port            q - quit\n"\
+" D - toggle show destination port\n"\
 " p - toggle port display\n"\
 "\n"\
 "Sorting:\n"\
@@ -64,8 +64,6 @@ char* unit_bytes[UNIT_DIVISIONS] =  { "B", "KB", "MB", "GB"};
 
 typedef struct host_pair_line_tag {
     addr_pair ap;
-    double long total_recv;
-    double long total_sent;
     double long recv[HISTORY_DIVISIONS];
     double long sent[HISTORY_DIVISIONS];
 } host_pair_line;
@@ -248,28 +246,10 @@ int history_length(const int d) {
         return history_divs[d] * RESOLUTION;
 }
 
-void draw_line_total(float sent, float recv, int y, int x, option_linedisplay_t linedisplay, int bytes) {
+void draw_line_total(float n, int y, int x) {
     char buf[10];
-    float n;
-    switch(linedisplay) {
-        case OPTION_LINEDISPLAY_TWO_LINE:
-          draw_line_total(sent, recv, y, x, OPTION_LINEDISPLAY_ONE_LINE_SENT, bytes);
-          draw_line_total(sent, recv, y+1, x, OPTION_LINEDISPLAY_ONE_LINE_RECV, bytes);
-          break;
-        case OPTION_LINEDISPLAY_ONE_LINE_SENT:
-          n = sent;
-          break;
-        case OPTION_LINEDISPLAY_ONE_LINE_RECV:
-          n = recv;
-          break;
-        case OPTION_LINEDISPLAY_ONE_LINE_BOTH:
-          n = recv + sent;
-          break;
-    }
-    if(linedisplay != OPTION_LINEDISPLAY_TWO_LINE) {
-        readable_size(n, buf, 10, 1024, bytes);
-        mvaddstr(y, x, buf);
-    }
+    readable_size(n, buf, 10, 1024, options.bandwidth_in_bytes);
+    mvaddstr(y, x, buf);
 }
 
 void draw_bar(float n, int y) {
@@ -285,8 +265,23 @@ void draw_line_totals(int y, host_pair_line* line, option_linedisplay_t linedisp
     int x = (COLS - 8 * HISTORY_DIVISIONS);
 
     for(j = 0; j < HISTORY_DIVISIONS; j++) {
-        draw_line_total(line->sent[j], line->recv[j], y, x, linedisplay, options.bandwidth_in_bytes);
-        x += 8;
+      switch(linedisplay) {
+        case OPTION_LINEDISPLAY_TWO_LINE:
+          draw_line_total(line->sent[j], y, x);
+          draw_line_total(line->recv[j], y+1, x);
+          break;
+        case OPTION_LINEDISPLAY_ONE_LINE_SENT:
+          draw_line_total(line->sent[j], y, x);
+          break;
+        case OPTION_LINEDISPLAY_ONE_LINE_RECV:
+          draw_line_total(line->recv[j], y, x);
+          break;
+        case OPTION_LINEDISPLAY_ONE_LINE_BOTH:
+          draw_line_total(line->recv[j] + line->sent[j], y, x);
+          break;
+      }
+
+      x += 8;
     }
     
     if(options.showbars) {
@@ -460,9 +455,6 @@ void analyse_data() {
             screen_line->ap = ap;
         }
         
-	screen_line->total_sent += d->total_sent;
-	screen_line->total_recv += d->total_recv;
-
         for(i = 0; i < HISTORY_LENGTH; i++) {
             int j;
             int ii = (HISTORY_LENGTH + history_pos - i) % HISTORY_LENGTH;
@@ -574,9 +566,6 @@ void ui_print() {
 
             if(y < LINES - 5) {
                 L = (COLS - 8 * HISTORY_DIVISIONS - 4) / 2;
-                if(options.show_totals) {
-                    L -= 4;    
-                }
                 if(L > HOSTNAME_LENGTH) {
                     L = HOSTNAME_LENGTH;
                 }
@@ -611,10 +600,6 @@ void ui_print() {
 
                 mvaddstr(y, x, host2);
                 
-                if(options.show_totals) {
-                    draw_line_total(screen_line->total_sent, screen_line->total_recv, y, COLS - 8 * (HISTORY_DIVISIONS + 1), options.linedisplay, 1);
-                }
-
                 draw_line_totals(y, screen_line, options.linedisplay);
 
             }
@@ -1007,16 +992,6 @@ void ui_loop() {
                 dontshowdisplay = 0;
                 break;
             }
-            case 'T':
-                options.show_totals = !options.show_totals;
-                if(options.show_totals) {
-                    showhelp("Show cummulative totals");
-                }
-                else {
-                    showhelp("Hide cummulative totals");
-                }
-                ui_print();
-                break;
             case KEY_CLEAR:
             case 12:    /* ^L */
                 wrefresh(curscr);

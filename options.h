@@ -64,8 +64,6 @@ typedef struct {
 
     option_linedisplay_t linedisplay;
 
-    int show_totals;
-
 } options_t;
 
 #endif /* __OPTIONS_H_ */
