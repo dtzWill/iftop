@@ -1,9 +1,25 @@
 README for iftop
-$Id: README,v 1.2 2002/03/29 13:40:36 pdw Exp $
+$Id: README,v 1.5 2002/10/25 11:36:02 chris Exp $
 
 Read the INSTALL file, manual page and source code for more information.
 
-RedHat 7.2 users:
+iftop must be run as root.
+
+KNOWN ISSUES
+
+RedHat 7.2:
+
 There is a bug in the version of ncurses distibuted with RedHat 7.2 that
 will cause iftop to segfault.  The RPM in RedHat's Rawhide distribution
 fixes this.
+
+Slackware 8.1:
+
+You may need to upgrade your libpcap (by updating the tcpdump package) 
+in order to compile iftop.
+
+FreeBSD 4.7:
+
+This version of FreeBSD lacks a proper gethostbyaddr_r function. You should
+choose an alternative name resolution technique; see comments in the Makefile.
+We recommend using ares (-DUSE_ARES).

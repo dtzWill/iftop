@@ -13,8 +13,9 @@
 typedef struct {
     long recv[HISTORY_LENGTH];
     long sent[HISTORY_LENGTH];
+    double long total_sent;
+    double long total_recv;
     int last_write;
-    int promisc;
 } history_type;
 
 void tick();
@@ -24,5 +25,20 @@ void *xcalloc(size_t n, size_t m);
 void *xrealloc(void *w, size_t n);
 char *xstrdup(const char *s);
 void xfree(void *v);
+
+/* ui.c */
+void analyse_data(void);
+void ui_init(void);
+
+/* options.c */
+void options_read(int argc, char **argv);
+
+
+/* Make use of SIOCGIFHWADDR work on FreeBSD */
+#ifndef SIOCGIFHWADDR
+#define SIOCGIFHWADDR SIOCGIFADDR
+#define ifr_hwaddr ifr_addr
+#endif
+
 
 #endif /* __IFTOP_H_ */
