@@ -18,7 +18,7 @@
 
 options_t options;
 
-char optstr[] = "+i:f:nN:hpbBP";
+char optstr[] = "+i:f:n:dhpbBP";
 
 /* Global options. */
 
@@ -95,9 +95,6 @@ static void set_defaults() {
     options.paused = 0;
     options.showhelp = 0;
     options.bandwidth_in_bytes = 0;
-    options.sort = OPTION_SORT_DIV2;
-    options.screenfilter = NULL;
-    options.freezeorder = 0;
 }
 
 static void die(char *msg) {
@@ -153,10 +150,10 @@ static void usage(FILE *fp) {
     fprintf(fp,
 "iftop: display bandwidth usage on an interface by host\n"
 "\n"
-"Synopsis: iftop -h | [-npbBP] [-i interface] [-f filter code] [-N net/mask]\n"
+"Synopsis: iftop -h | [-dpb] [-i interface] [-f filter code] [-n net/mask]\n"
 "\n"
 "   -h                  display this message\n"
-"   -n                  don't do hostname lookups\n"
+"   -d                  don't do hostname lookups\n"
 "   -p                  run in promiscuous mode (show traffic between other\n"
 "                       hosts on the same network segment)\n"
 "   -b                  don't display a bar graph of traffic\n"
@@ -164,7 +161,7 @@ static void usage(FILE *fp) {
 "   -i interface        listen on named interface\n"
 "   -f filter code      use filter code to select packets to count\n"
 "                       (default: none, but only IP packets are counted)\n"
-"   -N net/mask         show traffic flows in/out of network\n"
+"   -n net/mask         show traffic flows in/out of network\n"
 "   -P                  show ports as well as hosts\n"
 "\n"
 "iftop, version " IFTOP_VERSION "\n"
@@ -184,7 +181,7 @@ void options_read(int argc, char **argv) {
                 usage(stdout);
                 exit(0);
 
-            case 'n':
+            case 'd':
                 options.dnsresolution = 0;
                 break;
 
@@ -193,7 +190,7 @@ void options_read(int argc, char **argv) {
                 break;
 
             case 'f':
-                options.filtercode = xstrdup(optarg);
+                options.filtercode = optarg;
                 break;
 
             case 'p':
@@ -204,7 +201,7 @@ void options_read(int argc, char **argv) {
                 options.showports = OPTION_PORTS_ON;
                 break;
 
-            case 'N':
+            case 'n':
                 set_net_filter(optarg);
                 break;
 
@@ -228,10 +225,6 @@ void options_read(int argc, char **argv) {
         }
     }
 
-    if (optind != argc) {
-        fprintf(stderr, "iftop: found arguments following options\n");
-        fprintf(stderr, "*** some options have changed names since v0.9 ***\n");
-        usage(stderr);
-        exit(1);
-    }
+    if (optind != argc)
+        fprintf(stderr, "iftop: warning: ignored arguments following options\n");
 }

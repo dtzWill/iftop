@@ -18,14 +18,6 @@ typedef enum {
   OPTION_PORTS_ON
 } option_port_t;
 
-typedef enum {
-  OPTION_SORT_DIV1,
-  OPTION_SORT_DIV2,
-  OPTION_SORT_DIV3,
-  OPTION_SORT_SRC,
-  OPTION_SORT_DEST
-} option_sort_t;
-
 typedef struct {
     /* interface on which to listen */
     char *interface;
@@ -47,10 +39,6 @@ typedef struct {
     int paused;
     int showhelp;
     int bandwidth_in_bytes;
-    option_sort_t sort;
-
-    char* screenfilter;
-    int freezeorder;
 
 } options_t;
 

@@ -44,7 +44,6 @@ int history_len = 1;
 pthread_mutex_t tick_mutex;
 
 pcap_t* pd; /* pcap descriptor */
-struct bpf_program pcap_filter;
 pcap_handler packet_handler;
 
 sig_atomic_t foad;
@@ -52,7 +51,6 @@ sig_atomic_t foad;
 static void finish(int sig) {
     foad = sig;
 }
-
 
 
 
@@ -114,8 +112,8 @@ void tick(int print) {
         history_rotate();
         last_timestamp = t;
     }
-    else {
-      ui_tick(print);
+    else if(print) {
+        ui_print();
     }
 
     pthread_mutex_unlock(&tick_mutex);
@@ -242,11 +240,11 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
 
     if(direction == 0) {
         /* incoming */
-        history_totals.recv[history_pos] += len;
+        history_totals.recv[history_pos] += ntohs(iptr->ip_len);
         history_totals.total_recv += len;
     }
     else {
-        history_totals.sent[history_pos] += len;
+        history_totals.sent[history_pos] += ntohs(iptr->ip_len);
         history_totals.total_sent += len;
     }
     
@@ -308,29 +306,6 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
 }
 
 
-/* set_filter_code:
- * Install some filter code. Returns NULL on success or an error message on
- * failure. */
-char *set_filter_code(const char *filter) {
-    char *x;
-    if (filter) {
-        x = xmalloc(strlen(filter) + sizeof "() and ip");
-        sprintf(x, "(%s) and ip", filter);
-    } else
-        x = xstrdup("ip");
-    if (pcap_compile(pd, &pcap_filter, x, 1, 0) == -1) {
-        xfree(x);
-        return pcap_geterr(pd);
-    }
-    xfree(x);
-    if (pcap_setfilter(pd, &pcap_filter) == -1)
-        return pcap_geterr(pd);
-    else
-        return NULL;
-}
-
-
-
 /*
  * packet_init:
  *
@@ -338,9 +313,10 @@ char *set_filter_code(const char *filter) {
  */
 void packet_init() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    char *m;
+    char* str = "ip";
+    struct bpf_program F;
     int s;
-    struct ifreq ifr = {};
+    struct ifreq ifr = {0};
     int dlt;
 
     /* First, get the address of the interface. If it isn't an ethernet
@@ -353,7 +329,6 @@ void packet_init() {
     strncpy(ifr.ifr_name, options.interface, IFNAMSIZ);
     ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
     if (ioctl(s, SIOCGIFHWADDR, &ifr) == -1) {
-        fprintf(stderr, "Error getting hardware address for interface: %s\n", options.interface); 
         perror("ioctl(SIOCGIFHWADDR)");
         exit(1);
     }
@@ -393,11 +368,23 @@ void packet_init() {
         exit(1);
     }
 
-    if ((m = set_filter_code(options.filtercode))) {
-        fprintf(stderr, "set_filter_code: %s\n", m);
+    if (options.filtercode) {
+        str = xmalloc(strlen(options.filtercode) + sizeof "() and ip");
+        sprintf(str, "(%s) and ip", options.filtercode);
+    }
+    if (pcap_compile(pd, &F, str, 1, 0) == -1) {
+        fprintf(stderr, "pcap_compile(%s): %s\n", str, pcap_geterr(pd));
         exit(1);
         return;
     }
+    if (pcap_setfilter(pd, &F) == -1) {
+        fprintf(stderr, "pcap_setfilter: %s\n", pcap_geterr(pd));
+        exit(1);
+        return;
+    }
+    if (options.filtercode)
+        xfree(str);
+
 }
 
 /* packet_loop:
@@ -411,7 +398,7 @@ void packet_loop(void* ptr) {
  * Entry point. See usage(). */
 int main(int argc, char **argv) {
     pthread_t thread;
-    struct sigaction sa = {};
+    struct sigaction sa = {0};
 
     options_read(argc, argv);
     

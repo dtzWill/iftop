@@ -1,5 +1,7 @@
 Things to do for iftop
-$Id: TODO,v 1.13 2002/10/25 09:06:19 pdw Exp $
+$Id: TODO,v 1.12 2002/10/22 11:15:31 pdw Exp $
+
+* Bandwidth display in bytes/s
 
 * Search for BSD interface names - need to know what to look for.
 
@@ -7,12 +9,21 @@ $Id: TODO,v 1.13 2002/10/25 09:06:19 pdw Exp $
 
 * Config file.
 
+* Redesign totals:
+
+        2sec 10sec 40sec Peak Total
+TX         x     x     x    x     x
+RX         x     x     x    x     x
+Total      x     x     x    x     x
+
 * Find someone gullible to sort out autoconf.
 
 * Which average to use for the bar graph? Show several and peaks? Colours?
 
 * Single keypress firewalling of troublesome connections, a la top(1)'s K
   to kill?
+
+* Configurable sort criteria.
 
 * Configurable refresh rates.
 

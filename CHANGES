@@ -1,16 +1,5 @@
 Change log for iftop
-$Id: CHANGES,v 1.22 2002/10/25 10:18:50 pdw Exp $
-
-0.10 29/10/02
-
-User selectable sort criteria
-On-the-fly filter code changes
-Shell escape
-Alternative resolver back-ends
-Improved totals display
-Added regexp based screen filtering 
-Fixed pause functionality
-Change option names to be more like tcpdump
+$Id: CHANGES,v 1.20 2002/10/22 11:15:31 pdw Exp $
 
 0.9 22/10/02
 
