@@ -2,10 +2,10 @@
 # Makefile:
 # Makefile for iftop.
 #
-# $Id: Makefile,v 1.46 2002/10/25 10:48:32 pdw Exp $
+# $Id: Makefile,v 1.48 2002/10/25 12:53:36 pdw Exp $
 #
 
-VERSION = 0.10pre3
+VERSION = 0.10pre4
 
 # C compiler to use.
 #CC = gcc
@@ -43,6 +43,7 @@ CFLAGS += -DUSE_GETHOSTBYADDR_R
 # Uncomment if you are using libresolv.
 #
 #LDLIBS += -lresolv # or /usr/lib/libresolv.a on Linux?
+
 #
 # Uncomment if you are using ares.
 #
