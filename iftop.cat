@@ -7,7 +7,7 @@ IFTOP(8)                                                              IFTOP(8)
 
 
 [1mSYNOPSIS[0m
-       [1miftop -h [22m| [[1m-npbBP[22m] [[1m-i [4m[22minterface[24m] [[1m-f [4m[22mfilter[24m [4mcode[24m] [[1m-N [4m[22mnet[24m/[4mmask[24m]
+       [1miftop -h [22m| [[1m-nNpbBP[22m] [[1m-i [4m[22minterface[24m] [[1m-f [4m[22mfilter[24m [4mcode[24m] [[1m-F [4m[22mnet[24m/[4mmask[24m]
 
 
 [1mDESCRIPTION[0m
@@ -48,16 +48,16 @@ IFTOP(8)                                                              IFTOP(8)
 [1mOPTIONS[0m
        [1m-h     [22mPrint a summary of usage.
 
-       [1m-n     [22mDon't do hostname lookups. This setting may be  altered  at  run
-              time.
+       [1m-n     [22mDon't do hostname lookups.
 
-       [1m-p     [22mRun  in  promiscuous  mode,  so that traffic which does not pass
+       [1m-N     [22mDo not resolve port number to service names
+
+       [1m-p     [22mRun in promiscuous mode, so that traffic  which  does  not  pass
               directly through the specified interface is also counted.
 
        [1m-P     [22mTurn on port display.
 
-       [1m-b     [22mDon't display bar graphs of traffic. This setting may be altered
-              at run time.
+       [1m-b     [22mDon't display bar graphs of traffic.
 
        [1m-B     [22mDisplay bandwidth rates in bytes/sec rather than bits/sec.
 
@@ -69,7 +69,7 @@ IFTOP(8)                                                              IFTOP(8)
               are ever counted, so the specified code is evaluated as  [1m([4m[22mfilter[0m
               [4mcode[24m[1m) and ip[22m.
 
-       [1m-N [4m[22mnet[24m/[4mmask[0m
+       [1m-F [4m[22mnet[24m/[4mmask[0m
               Specifies  a  network for traffic analysis.  If specified, iftop
               will only include packets flowing in to or out of the given net-
               work, and packet direction is determined relative to the network
@@ -209,7 +209,7 @@ IFTOP(8)                                                              IFTOP(8)
 
 
 [1mVERSION[0m
-       $Id: iftop.8,v 1.22 2003/03/01 01:55:13 pdw Exp $
+       $Id: iftop.8,v 1.23 2003/10/20 21:41:53 pdw Exp $
 
 
 [1mCOPYING[0m

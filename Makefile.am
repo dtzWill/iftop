@@ -7,7 +7,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.3 2003/10/11 15:59:40 pdw Exp $
+# $Id: Makefile.am,v 1.4 2003/10/19 06:44:33 pdw Exp $
 #
 
 sbin_PROGRAMS = iftop
@@ -15,12 +15,14 @@ sbin_PROGRAMS = iftop
 iftop_SOURCES = addr_hash.c edline.c hash.c iftop.c ns_hash.c \
                  options.c resolver.c screenfilter.c serv_hash.c \
                  sorted_list.c threadprof.c ui.c util.c \
-		 addrs_ioctl.c addrs_dlpi.c dlcommon.c
+		 addrs_ioctl.c addrs_dlpi.c dlcommon.c \
+		 stringmap.c cfgfile.c vector.c
 
 noinst_HEADERS = addr_hash.h ether.h ethertype.h extract.h hash.h iftop.h \
                  integers.h ip.h llc.h ns_hash.h options.h resolver.h \
                  screenfilter.h serv_hash.h sll.h sorted_list.h tcp.h \
-                 threadprof.h token.h ui.h dlcommon.h
+                 threadprof.h token.h ui.h dlcommon.h stringmap.h \
+		 vector.h
 
 man_MANS = iftop.8
 
