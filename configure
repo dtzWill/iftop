@@ -1673,7 +1673,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=iftop
- VERSION="0.17pre2"
+ VERSION="0.17pre3"
 
 
 cat >>confdefs.h <<_ACEOF

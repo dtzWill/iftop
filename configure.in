@@ -7,7 +7,7 @@ dnl things and even once you have you find yourself testing for more and more
 dnl special cases. But that's OK. Paul is going to maintain it :)
 dnl     -- Chris Lightfoot
 dnl
-dnl $Id: configure.in,v 1.25 2005/06/13 08:35:18 pdw Exp $
+dnl $Id: configure.in,v 1.27 2005/12/25 20:42:45 pdw Exp $
 dnl
 dnl To regenerate everything from source, do:
 dnl    autoheader
@@ -29,7 +29,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(iftop, "0.17pre2")
+AM_INIT_AUTOMAKE(iftop, "0.17pre3")
 
 AC_DEFINE_UNQUOTED(IFTOP_VERSION, "$VERSION", [The iftop version number])
 
