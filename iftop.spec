@@ -1,6 +1,6 @@
 Summary:		iftop - display bandwidth usage on an interface by host
 Name:			iftop
-Version:		0.17pre1
+Version:		0.17pre2
 Release:		1
 Source:			http://www.ex-parrot.com/~pdw/iftop/%{name}-%{version}.tar.gz
 URL:			http://www.ex-parrot.com/~pdw/iftop/
