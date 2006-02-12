@@ -3,7 +3,7 @@
  * Tiny test program to see whether POSIX threads work.
  */
 
-static const char rcsid[] = "$Id: pthread.c,v 1.3 2004/01/20 09:51:48 pdw Exp $";
+static const char rcsid[] = "$Id: pthread.c,v 1.4 2005/10/26 22:56:05 chris Exp $";
 
 #include <sys/types.h>
 
@@ -40,7 +40,7 @@ int main(void) {
     struct timespec deadline = {0};
     if ((res = pthread_mutex_lock(&mtx)) != 0
         || (res = pthread_create(&thr, NULL, worker_thread, NULL)) != 0) {
-        fprintf(stderr, "%s\n", strerror(res));   
+        fprintf(stderr, "%s\n", strerror(res));
         return -1;
     }
 

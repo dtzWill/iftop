@@ -2,89 +2,89 @@ IFTOP(8)                                                              IFTOP(8)
 
 
 
-[1mNAME[0m
+NNAAMMEE
        iftop - display bandwidth usage on an interface by host
 
 
-[1mSYNOPSIS[0m
-       [1miftop -h [22m| [[1m-nNpbBP[22m] [[1m-i [4m[22minterface[24m] [[1m-f [4m[22mfilter[24m [4mcode[24m] [[1m-F [4m[22mnet[24m/[4mmask[24m]
+SSYYNNOOPPSSIISS
+       iiffttoopp --hh | [--nnNNppbbBBPP] [--ii _i_n_t_e_r_f_a_c_e] [--ff _f_i_l_t_e_r _c_o_d_e] [--FF _n_e_t/_m_a_s_k]
 
 
-[1mDESCRIPTION[0m
-       [1miftop  [22mlistens to network traffic on a named [4minterface[24m, or on the first
+DDEESSCCRRIIPPTTIIOONN
+       iiffttoopp  listens to network traffic on a named _i_n_t_e_r_f_a_c_e, or on the first
        interface it can find which looks like an external interface if none is
        specified,  and displays a table of current bandwidth usage by pairs of
-       hosts.  [1miftop [22mmust be run with sufficient permissions  to  monitor  all
-       network traffic on the [4minterface[24m; see [1mpcap[22m(3) for more information, but
+       hosts.  iiffttoopp must be run with sufficient permissions  to  monitor  all
+       network traffic on the _i_n_t_e_r_f_a_c_e; see ppccaapp(3) for more information, but
        on most systems this means that it must be run as root.
 
-       By default, [1miftop [22mwill look up the hostnames associated with  addresses
+       By default, iiffttoopp will look up the hostnames associated with  addresses
        it  finds in packets. This can cause substantial traffic of itself, and
        may result in a confusing display. You may wish to suppress display  of
-       DNS  traffic by using filter code such as [1mnot port domain[22m, or switch it
-       off entirely, by using the [1m-n [22moption or by pressing [1mR [22mwhen the  program
+       DNS  traffic by using filter code such as nnoott ppoorrtt ddoommaaiinn, or switch it
+       off entirely, by using the --nn option or by pressing RR when the  program
        is running.
 
-       By  default,  [1miftop [22mcounts all IP packets that pass through the filter,
+       By  default,  iiffttoopp counts all IP packets that pass through the filter,
        and the direction of the packet is determined according to  the  direc-
-       tion the packet is moving across the interface.  Using the [1m-N [22moption it
-       is possible to get [1miftop [22mto show packets entering and leaving  a  given
-       network.  For example, [1miftop -N 10.0.0.0/255.0.0.0 [22mwill analyse packets
+       tion the packet is moving across the interface.  Using the --FF option it
+       is possible to get iiffttoopp to show packets entering and leaving  a  given
+       network.  For example, iiffttoopp --FF 1100..00..00..00//225555..00..00..00 will analyse packets
        flowing in and out of the 10.* network.
 
        Some other filter ideas:
 
-       [1mnot ether host ff:ff:ff:ff:ff:ff[0m
+       nnoott eetthheerr hhoosstt ffff::ffff::ffff::ffff::ffff::ffff
               Ignore ethernet broadcast packets.
 
-       [1mport http and not host [4m[22mwebcache.example.com[0m
+       ppoorrtt hhttttpp aanndd nnoott hhoosstt _w_e_b_c_a_c_h_e_._e_x_a_m_p_l_e_._c_o_m
               Count web traffic only, unless it is being  directed  through  a
               local web cache.
 
-       [1micmp   [22mHow much bandwith are users wasting trying to figure out why the
+       iiccmmpp   How much bandwith are users wasting trying to figure out why the
               network is slow?
 
 
-[1mOPTIONS[0m
-       [1m-h     [22mPrint a summary of usage.
+OOPPTTIIOONNSS
+       --hh     Print a summary of usage.
 
-       [1m-n     [22mDon't do hostname lookups.
+       --nn     Don't do hostname lookups.
 
-       [1m-N     [22mDo not resolve port number to service names
+       --NN     Do not resolve port number to service names
 
-       [1m-p     [22mRun in promiscuous mode, so that traffic  which  does  not  pass
+       --pp     Run in promiscuous mode, so that traffic  which  does  not  pass
               directly through the specified interface is also counted.
 
-       [1m-P     [22mTurn on port display.
+       --PP     Turn on port display.
 
-       [1m-b     [22mDon't display bar graphs of traffic.
+       --bb     Don't display bar graphs of traffic.
 
-       [1m-B     [22mDisplay bandwidth rates in bytes/sec rather than bits/sec.
+       --BB     Display bandwidth rates in bytes/sec rather than bits/sec.
 
-       [1m-i [4m[22minterface[0m
-              Listen to packets on [4minterface[24m.
+       --ii _i_n_t_e_r_f_a_c_e
+              Listen to packets on _i_n_t_e_r_f_a_c_e.
 
-       [1m-f [4m[22mfilter[24m [4mcode[0m
-              Use  [4mfilter[24m [4mcode[24m to select the packets to count. Only IP packets
-              are ever counted, so the specified code is evaluated as  [1m([4m[22mfilter[0m
-              [4mcode[24m[1m) and ip[22m.
+       --ff _f_i_l_t_e_r _c_o_d_e
+              Use  _f_i_l_t_e_r _c_o_d_e to select the packets to count. Only IP packets
+              are ever counted, so the specified code is evaluated as  ((_f_i_l_t_e_r
+              _c_o_d_e)) aanndd iipp.
 
-       [1m-F [4m[22mnet[24m/[4mmask[0m
+       --FF _n_e_t/_m_a_s_k
               Specifies  a  network for traffic analysis.  If specified, iftop
               will only include packets flowing in to or out of the given net-
               work, and packet direction is determined relative to the network
-              boundary, rather than to the interface.  You may specify [4mmask[24m as
+              boundary, rather than to the interface.  You may specify _m_a_s_k as
               a  dotted  quad,  such  as /255.255.255.0, or as a single number
               specifying the number of bits set in the netmask, such as /24.
 
-       [1m-c [4m[22mconfig[24m [4mfile[0m
+       --cc _c_o_n_f_i_g _f_i_l_e
               Specifies an alternate config file.   If  not  specified,  iftop
-              will use [1m~/.iftopc [22mif it exists.  See below for a description of
-              config files
+              will  use  ~~//..iiffttoopprrcc if it exists.  See below for a description
+              of config files
 
 
-[1mDISPLAY[0m
-       When running, [1miftop [22muses the whole screen to display network usage.  At
+DDIISSPPLLAAYY
+       When running, iiffttoopp uses the whole screen to display network usage.  At
        the  top  of the display is a logarithmic scale for the bar graph which
        gives a visual indication of traffic.
 
@@ -96,14 +96,14 @@ IFTOP(8)                                                              IFTOP(8)
        foo.example.com  =>  bar.example.com      1Kb  500b   100b
                         <=                       2Mb    2Mb    2Mb
 
-       shows,  on  the  first  line, traffic from [1mfoo.example.com [22mto [1mbar.exam-[0m
-       [1mple.com[22m; in the preceding 2 seconds, this averaged 1Kbit/s, around half
+       shows,  on  the  first  line, traffic from ffoooo..eexxaammppllee..ccoomm to bbaarr..eexxaamm--
+       ppllee..ccoomm; in the preceding 2 seconds, this averaged 1Kbit/s, around half
        that  amount over the preceding 10s, and a fifth of that over the whole
        of the last 40s. During each of those intervals, the data sent  in  the
        other  direction was about 2Mbit/s. On the actual display, part of each
        line is inverted to give a visual indication  of  the  10s  average  of
-       traffic.  You might expect to see something like this where host [1mfoo [22mis
-       making repeated HTTP requests to [1mbar[22m, which is sending data back  which
+       traffic.  You might expect to see something like this where host ffoooo is
+       making repeated HTTP requests to bbaarr, which is sending data back  which
        saturates a 2Mbit/s link.
 
        By  default,  the  pairs  of hosts responsible for the most traffic (10
@@ -114,32 +114,32 @@ IFTOP(8)                                                              IFTOP(8)
        and total transfer rates averaged over 2s, 10s and 40s.
 
 
-[1mSOURCE / DEST AGGREGATION[0m
-       By pressing [1ms [22mor [1md [22mwhile [1miftop [22mis running, all traffic for each  source
+SSOOUURRCCEE // DDEESSTT AAGGGGRREEGGAATTIIOONN
+       By pressing ss or dd while iiffttoopp is running, all traffic for each  source
        or  destination  will be aggregated together.  This is most useful when
-       [1miftop [22mis run in promiscuous mode, or is run on a gateway machine.
+       iiffttoopp is run in promiscuous mode, or is run on a gateway machine.
 
 
-[1mPORT DISPLAY[0m
-       [1mS [22mor [1mD [22mtoggle the display of source and destination ports respectively.
-       [1mp [22mwill toggle port display on/off.
+PPOORRTT DDIISSPPLLAAYY
+       SS or DD toggle the display of source and destination ports respectively.
+       pp will toggle port display on/off.
 
 
-[1mDISPLAY TYPE[0m
-       [1mt  [22mcycles  through the four line display modes; the default 2-line dis-
+DDIISSPPLLAAYY TTYYPPEE
+       tt  cycles  through the four line display modes; the default 2-line dis-
        play, with sent and received traffic on separate lines,  and  3  1-line
        displays, with sent, received, or total traffic shown.
 
 
-[1mDISPLAY ORDER[0m
+DDIISSPPLLAAYY OORRDDEERR
        By  default,  the  display is ordered according to the 10s average (2nd
-       column).  By pressing [1m1[22m, [1m2 [22mor [1m3 [22mit is possible to sort by the 1st,  2nd
-       or  3rd  column.    By  pressing  [1m<  [22mor [1m> [22mthe display will be sorted by
+       column).  By pressing 11, 22 or 33 it is possible to sort by the 1st,  2nd
+       or  3rd  column.    By  pressing  <<  or >> the display will be sorted by
        source or destination hostname respectively.
 
 
-[1mDISPLAY FILTERING[0m
-       [1ml [22mallows you to enter a POSIX extended regular expression that will  be
+DDIISSPPLLAAYY FFIILLTTEERRIINNGG
+       ll allows you to enter a POSIX extended regular expression that will  be
        used  to  filter hostnames shown in the display.  This is a good way to
        quickly limit what is shown on the display.  Note that this happens  at
        a  much later stage than filter code, and does not affect what is actu-
@@ -147,29 +147,29 @@ IFTOP(8)                                                              IFTOP(8)
        of the screen.
 
 
-[1mPAUSE DISPLAY / FREEZE ORDER[0m
-       [1mP [22mwill pause the current display.
+PPAAUUSSEE DDIISSPPLLAAYY // FFRREEEEZZEE OORRDDEERR
+       PP will pause the current display.
 
-       [1mo  [22mwill freeze the current screen order.  This has the side effect that
+       oo  will freeze the current screen order.  This has the side effect that
        traffic between hosts not shown on the screen at the time will  not  be
        shown  at all, although it will be included in the totals at the bottom
        of the screen.
 
 
-[1mSCROLL DISPLAY[0m
-       [1mj [22mand [1mk [22mwill scroll the display of hosts.  This feature is most  useful
+SSCCRROOLLLL DDIISSPPLLAAYY
+       jj and kk will scroll the display of hosts.  This feature is most  useful
        when the display order is frozen (see above).
 
 
-[1mFILTER CODE[0m
-       [1mf  [22mallows  you  to edit the filter code whilst iftop running.  This can
+FFIILLTTEERR CCOODDEE
+       ff  allows  you  to edit the filter code whilst iftop running.  This can
        lead to some unexpected behaviour.
 
 
-[1mCONFIG FILE[0m
-       iftop can read its configuration from a config file.  If the [1m-c  [22moption
+CCOONNFFIIGG FFIILLEE
+       iftop can read its configuration from a config file.  If the --cc  option
        is  not  specified,  iftop  will attempt to read its configuration from
-       [1m~/.iftoprc[22m, if it exists.  Any  command  line  options  specified  will
+       ~~//..iiffttoopprrcc, if it exists.  Any  command  line  options  specified  will
        override settings in the config file.
 
        The config file consists of one configuration directive per line.  Each
@@ -181,65 +181,65 @@ IFTOP(8)                                                              IFTOP(8)
        ported:
 
 
-       [1minterface: [4m[22mif[0m
-              Sets the network interface to [4mif[24m.
+       iinntteerrffaaccee:: _i_f
+              Sets the network interface to _i_f.
 
-       [1mdns-resolution: [4m[22m(yes|no)[0m
+       ddnnss--rreessoolluuttiioonn:: _(_y_e_s_|_n_o_)
               Controls reverse lookup of IP addresses.
 
-       [1mport-resolution: [4m[22m(yes|no)[0m
+       ppoorrtt--rreessoolluuttiioonn:: _(_y_e_s_|_n_o_)
               Controls conversion of port numbers to service names.
 
-       [1mfilter-code: [4m[22mbpf[0m
-              Sets the filter code to [4mbpf[24m.
+       ffiilltteerr--ccooddee:: _b_p_f
+              Sets the filter code to _b_p_f.
 
-       [1mshow-bars: [4m[22m(yes|no)[0m
+       sshhooww--bbaarrss:: _(_y_e_s_|_n_o_)
               Controls display of bar graphs.
 
-       [1mpromiscuous: [4m[22m(yes|no)[0m
+       pprroommiissccuuoouuss:: _(_y_e_s_|_n_o_)
               Puts the interface into promiscuous mode.
 
-       [1mport-display: [4m[22m(off|source-only|destination-only|on)[0m
+       ppoorrtt--ddiissppllaayy:: _(_o_f_f_|_s_o_u_r_c_e_-_o_n_l_y_|_d_e_s_t_i_n_a_t_i_o_n_-_o_n_l_y_|_o_n_)
               Controls display of port numbers.
 
-       [1mhide-source: [4m[22m(yes|no)[0m
+       hhiiddee--ssoouurrccee:: _(_y_e_s_|_n_o_)
               Hides source host names.
 
-       [1mhide-destination: [4m[22m(yes|no)[0m
+       hhiiddee--ddeessttiinnaattiioonn:: _(_y_e_s_|_n_o_)
               Hides destination host names.
 
-       [1muse-bytes: [4m[22m(yes|no)[0m
+       uussee--bbyytteess:: _(_y_e_s_|_n_o_)
               Use bytes for bandwidth display, rather than bits.
 
-       [1msort: [4m[22m(2s|10s|40s|source|destination)[0m
+       ssoorrtt:: _(_2_s_|_1_0_s_|_4_0_s_|_s_o_u_r_c_e_|_d_e_s_t_i_n_a_t_i_o_n_)
               Sets which column is used to sort the display.
 
-       [1mline-display: [4m[22m(two-line|one-line-both|one-line-sent|one-line-received)[0m
+       lliinnee--ddiissppllaayy:: _(_t_w_o_-_l_i_n_e_|_o_n_e_-_l_i_n_e_-_b_o_t_h_|_o_n_e_-_l_i_n_e_-_s_e_n_t_|_o_n_e_-_l_i_n_e_-_r_e_c_e_i_v_e_d_)
               Controls the appearance of each item in the display.
 
-       [1mshow-totals: [4m[22m(yes|no)[0m
+       sshhooww--ttoottaallss:: _(_y_e_s_|_n_o_)
               Shows cummulative total for each item.
 
-       [1mlog-scale: [4m[22m(yes|no)[0m
+       lloogg--ssccaallee:: _(_y_e_s_|_n_o_)
               Use a logarithmic scale for bar graphs.
 
-       [1mmax-bandwidth: [4m[22mbw[0m
-              Fixes the maximum for the bar graph scale to [4mbw[24m, e.g. "10M"
+       mmaaxx--bbaannddwwiiddtthh:: _b_w
+              Fixes the maximum for the bar graph scale to _b_w, e.g. "10M"
 
-       [1mnet-filter: [4m[22mnet/mask[0m
+       nneett--ffiilltteerr:: _n_e_t_/_m_a_s_k
               Defines an IP network boundary for determining packet direction.
 
-       [1mscreen-filter: [4m[22mregexp[0m
+       ssccrreeeenn--ffiilltteerr:: _r_e_g_e_x_p
               Sets a regular expression to filter screen output.
 
 
-[1mQUIRKS (aka they're features, not bugs)[0m
+QQUUIIRRKKSS ((aakkaa tthheeyy''rree ffeeaattuurreess,, nnoott bbuuggss))
        There are some circumstances in which iftop may not do what you expect.
        In most cases what it is doing is logical, and we believe it is correct
        behaviour, although I'm happy to hear reasoned arguments  for  alterna-
        tive behaviour.
 
-       [1mTotals don't add up[0m
+       TToottaallss ddoonn''tt aadddd uupp
 
        There are several reasons why the totals may not appear to add up.  The
        most obvious is having a screen filter in effect,  or  screen  ordering
@@ -247,22 +247,22 @@ IFTOP(8)                                                              IFTOP(8)
        you, but is included in the totals.
 
        A more subtle explanation comes about when running in promiscuous  mode
-       without  specifying  a [1m-N [22moption.  In this case there is no easy way to
+       without  specifying  a --FF option.  In this case there is no easy way to
        assign the direction of traffic between two  third  parties.   For  the
        purposes  of  the main display this is done in an arbitrary fashion (by
        ordering of IP addresses), but for  the  sake  of  totals  all  traffic
        between other hosts is accounted as incoming, because that's what it is
-       from the point of view of your interface.  The [1m-N [22moption allows you  to
+       from the point of view of your interface.  The --FF option allows you  to
        specify  an  arbitrary  network  boundary,  and to show traffic flowing
        across it.
 
-       [1mPeak totals don't add up[0m
+       PPeeaakk ttoottaallss ddoonn''tt aadddd uupp
 
        Again, this is a feature.  The peak sent and peak received didn't  nec-
        essarily  happen  at  the  same time.  The peak total is the maximum of
        sent plus received in each captured time division.
 
-       [1mChanging the filter code doesn't seem to work[0m
+       CChhaannggiinngg tthhee ffiilltteerr ccooddee ddooeessnn''tt sseeeemm ttoo wwoorrkk
 
        Give it time.  Changing the filter code affects what is  captured  from
        the  time  that  you  entered it, but most of what is on the display is
@@ -272,24 +272,24 @@ IFTOP(8)                                                              IFTOP(8)
        diate effect and does not affect what is captured.
 
 
-[1mFILES[0m
-       [1m~/.iftoprc[0m
+FFIILLEESS
+       ~~//..iiffttoopprrcc
               Configuration file for iftop.
 
 
-[1mSEE ALSO[0m
-       [1mtcpdump[22m(8), [1mpcap[22m(3), [1mdriftnet[22m(1).
+SSEEEE AALLSSOO
+       ttccppdduummpp(8), ppccaapp(3), ddrriiffttnneett(1).
 
 
-[1mAUTHOR[0m
+AAUUTTHHOORR
        Paul Warren <pdw@ex-parrot.com>
 
 
-[1mVERSION[0m
-       $Id: iftop.8,v 1.24 2003/10/22 19:28:31 pdw Exp $
+VVEERRSSIIOONN
+       $Id: iftop.8,v 1.25 2005/12/25 11:50:21 pdw Exp $
 
 
-[1mCOPYING[0m
+CCOOPPYYIINNGG
        This program is free software; you can redistribute it and/or modify it
        under the terms of the GNU General Public License as published  by  the
        Free  Software Foundation; either version 2 of the License, or (at your

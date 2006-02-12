@@ -43,6 +43,7 @@
 #include "extract.h"
 #include "ethertype.h"
 #include "cfgfile.h"
+#include "ppp.h"
 
 
 /* ethernet address of interface. */
@@ -75,8 +76,8 @@ static void finish(int sig) {
 
 
 
-/* Only need ethernet and IP headers (48) + first 2 bytes of tcp/udp header */
-#define CAPTURE_LENGTH 68
+/* Only need ethernet (plus optional 4 byte VLAN) and IP headers (48) + first 2 bytes of tcp/udp header */
+#define CAPTURE_LENGTH 72
 
 void init_history() {
     history = addr_hash_create();
@@ -353,6 +354,32 @@ static void handle_tokenring_packet(unsigned char* args, const struct pcap_pkthd
     }
 }
 
+static void handle_ppp_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+	register u_int length = pkthdr->len;
+	register u_int caplen = pkthdr->caplen;
+	u_int proto;
+
+	if (caplen < 2) 
+        return;
+
+	if(packet[0] == PPP_ADDRESS) {
+		if (caplen < 4) 
+            return;
+
+		packet += 2;
+		length -= 2;
+
+		proto = EXTRACT_16BITS(packet);
+		packet += 2;
+		length -= 2;
+
+        if(proto == PPP_IP || proto == ETHERTYPE_IP) {
+            handle_ip_packet((struct ip*)packet, -1);
+        }
+    }
+}
+
 #ifdef DLT_LINUX_SLL
 static void handle_cooked_packet(unsigned char *args, const struct pcap_pkthdr * thdr, const unsigned char * packet)
 {
@@ -378,11 +405,22 @@ static void handle_cooked_packet(unsigned char *args, const struct pcap_pkthdr *
 static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
 {
     struct ether_header *eptr;
+    int ether_type;
+    const unsigned char *payload;
     eptr = (struct ether_header*)packet;
+    ether_type = ntohs(eptr->ether_type);
+    payload = packet + sizeof(struct ether_header);
 
     tick(0);
 
-    if(ntohs(eptr->ether_type) == ETHERTYPE_IP) {
+    if(ether_type == ETHERTYPE_8021Q) {
+	struct vlan_8021q_header* vptr;
+	vptr = (struct vlan_8021q_header*)payload;
+	ether_type = ntohs(vptr->ether_type);
+        payload += sizeof(struct vlan_8021q_header);
+    }
+
+    if(ether_type == ETHERTYPE_IP) {
         struct ip* iptr;
         int dir = -1;
         
@@ -402,7 +440,7 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
             dir = 0;
         }
 
-        iptr = (struct ip*)(packet + sizeof(struct ether_header) ); /* alignment? */
+        iptr = (struct ip*)(payload); /* alignment? */
         handle_ip_packet(iptr, dir);
     }
 }
@@ -481,11 +519,14 @@ void packet_init() {
     if(dlt == DLT_EN10MB) {
         packet_handler = handle_eth_packet;
     }
-    else if(dlt == DLT_RAW) {
+    else if(dlt == DLT_RAW || dlt == DLT_NULL) {
         packet_handler = handle_raw_packet;
     } 
     else if(dlt == DLT_IEEE802) {
         packet_handler = handle_tokenring_packet;
+    }
+    else if(dlt == DLT_PPP) {
+        packet_handler = handle_ppp_packet;
     }
 /* 
  * SLL support not available in older libpcaps
