@@ -6,9 +6,12 @@
 #ifndef __IFTOP_H_ /* include guard */
 #define __IFTOP_H_
 
-/* 60 / 3  */
+#include "config.h"
+
+/* 40 / 2  */
 #define HISTORY_LENGTH  20
 #define RESOLUTION 2
+#define DUMP_RESOLUTION 300
 
 typedef struct {
     long recv[HISTORY_LENGTH];
@@ -18,7 +21,7 @@ typedef struct {
     int last_write;
 } history_type;
 
-void tick();
+void tick(int print);
 
 void *xmalloc(size_t n);
 void *xcalloc(size_t n, size_t m);
@@ -26,19 +29,20 @@ void *xrealloc(void *w, size_t n);
 char *xstrdup(const char *s);
 void xfree(void *v);
 
-/* ui.c */
-void analyse_data(void);
-void ui_init(void);
-
 /* options.c */
 void options_read(int argc, char **argv);
 
-
-/* Make use of SIOCGIFHWADDR work on FreeBSD */
-#ifndef SIOCGIFHWADDR
-#define SIOCGIFHWADDR SIOCGIFADDR
-#define ifr_hwaddr ifr_addr
-#endif
-
+struct pfloghdr {
+      unsigned char		length;
+      unsigned char		af;
+      unsigned char		action;
+      unsigned char		reason;
+      char				ifname[16];
+      char				ruleset[16];
+      unsigned int		rulenr;
+      unsigned int		subrulenr;
+      unsigned char		dir;
+      unsigned char		pad[3];
+};
 
 #endif /* __IFTOP_H_ */

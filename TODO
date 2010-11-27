@@ -1,28 +1,23 @@
 Things to do for iftop
-$Id: TODO,v 1.11 2002/10/21 10:40:23 pdw Exp $
+$Id: TODO,v 1.26 2003/10/20 21:41:53 pdw Exp $
 
-* Bandwidth display in bytes/s
-
-* Search for BSD interface names - need to know what to look for.
+* Add configurable offset for DLT_RAW
 
 * IP types other than v4?
 
-* Redesign totals:
+* Write config file
 
-        2sec 10sec 40sec Peak Total
-TX         x     x     x    x     x
-RX         x     x     x    x     x
-Total      x     x     x    x     x
-
-* Find someone gullible to sort out autoconf.
-
-* Which average to use for the bar graph? Show several and peaks? Colours?
+* Show several and peaks? Colours?
 
 * Single keypress firewalling of troublesome connections, a la top(1)'s K
   to kill?
 
-* Configurable sort criteria.
-
 * Configurable refresh rates.
 
-* Filtering of items included in diplay
+* Specify max link, then show %age capacity.
+
+* Count obscured connections.
+
+* Startup warnings cause pause.
+
+* Re-merge spec file

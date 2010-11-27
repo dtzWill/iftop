@@ -3,7 +3,15 @@
  *
  */
 
-#include <pcap.h>
+#include "integers.h"
+
+#if defined(HAVE_PCAP_H)
+#   include <pcap.h>
+#elif defined(HAVE_PCAP_PCAP_H)
+#   include <pcap/pcap.h>
+#else
+#   error No pcap.h
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -11,6 +19,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#include <net/bpf.h>
 
 #include <pthread.h>
 #include <curses.h>
@@ -30,9 +39,24 @@
 #include "ether.h"
 #include "ip.h"
 #include "tcp.h"
+#include "token.h"
+#include "llc.h"
+#include "extract.h"
+#include "ethertype.h"
+#include "cfgfile.h"
+#include "ppp.h"
 
+#include <netinet/ip6.h>
 
-unsigned char if_hw_addr[6];    /* ethernet address of interface. */
+/* ethernet address of interface. */
+int have_hw_addr = 0;
+unsigned char if_hw_addr[6];    
+
+/* IP address of interface */
+int have_ip_addr = 0;
+int have_ip6_addr = 0;
+struct in_addr if_ip_addr;
+struct in6_addr if_ip6_addr;
 
 extern options_t options;
 
@@ -44,6 +68,7 @@ int history_len = 1;
 pthread_mutex_t tick_mutex;
 
 pcap_t* pd; /* pcap descriptor */
+struct bpf_program pcap_filter;
 pcap_handler packet_handler;
 
 sig_atomic_t foad;
@@ -54,8 +79,10 @@ static void finish(int sig) {
 
 
 
-/* Only need ethernet and IP headers (48) + first 2 bytes of tcp/udp header */
-#define CAPTURE_LENGTH 68
+
+/* Only need ethernet (plus optional 4 byte VLAN) and IP headers (48) + first 2 bytes of tcp/udp header */
+/* Increase with a further 20 to account for IPv6 header length.  */
+#define CAPTURE_LENGTH 92
 
 void init_history() {
     history = addr_hash_create();
@@ -112,8 +139,8 @@ void tick(int print) {
         history_rotate();
         last_timestamp = t;
     }
-    else if(print) {
-        ui_print();
+    else {
+      ui_tick(print);
     }
 
     pthread_mutex_unlock(&tick_mutex);
@@ -125,6 +152,14 @@ int in_filter_net(struct in_addr addr) {
     return ret;
 }
 
+int __inline__ ip_addr_match(struct in_addr addr) {
+    return addr.s_addr == if_ip_addr.s_addr;
+}
+
+int __inline__ ip6_addr_match(struct in6_addr *addr) {
+    return IN6_ARE_ADDR_EQUAL(addr, &if_ip6_addr);
+}
+
 /**
  * Creates an addr_pair from an ip (and tcp/udp) header, swapping src and dst
  * if required
@@ -133,6 +168,11 @@ void assign_addr_pair(addr_pair* ap, struct ip* iptr, int flip) {
   unsigned short int src_port = 0;
   unsigned short int dst_port = 0;
 
+  /* Arrange for predictable values. */
+  memset(ap, '\0', sizeof(*ap));
+
+  if(IP_V(iptr) == 4) {
+    ap->af = AF_INET;
   /* Does this protocol use ports? */
   if(iptr->ip_p == IPPROTO_TCP || iptr->ip_p == IPPROTO_UDP) {
     /* We take a slight liberty here by treating UDP the same as TCP */
@@ -155,17 +195,54 @@ void assign_addr_pair(addr_pair* ap, struct ip* iptr, int flip) {
     ap->dst = iptr->ip_src;
     ap->dst_port = src_port;
   }
+  } /* IPv4 */
+  else if (IP_V(iptr) == 6) {
+    /* IPv6 packet seen. */
+    struct ip6_hdr *ip6tr = (struct ip6_hdr *) iptr;
 
+    ap->af = AF_INET6;
+
+    if( (ip6tr->ip6_nxt == IPPROTO_TCP) || (ip6tr->ip6_nxt == IPPROTO_UDP) ) {
+      struct tcphdr *thdr = ((void *) ip6tr) + 40;
+
+      src_port = ntohs(thdr->th_sport);
+      dst_port = ntohs(thdr->th_dport);
+    }
+
+    if(flip == 0) {
+      memcpy(&ap->src6, &ip6tr->ip6_src, sizeof(ap->src6));
+      ap->src_port = src_port;
+      memcpy(&ap->dst6, &ip6tr->ip6_dst, sizeof(ap->dst6));
+      ap->dst_port = dst_port;
+    }
+    else {
+      memcpy(&ap->src6, &ip6tr->ip6_dst, sizeof(ap->src6));
+      ap->src_port = dst_port;
+      memcpy(&ap->dst6, &ip6tr->ip6_src, sizeof(ap->dst6));
+      ap->dst_port = src_port;
+    }
+  }
 }
 
 static void handle_ip_packet(struct ip* iptr, int hw_dir)
 {
     int direction = 0; /* incoming */
     history_type* ht;
+    union {
+	history_type **ht_pp;
+	void **void_pp;
+    } u_ht = { &ht };
     addr_pair ap;
-    int len;
+    unsigned int len = 0;
+    struct in6_addr scribdst;   /* Scratch pad. */
+    struct in6_addr scribsrc;   /* Scratch pad. */
+    /* Reinterpret packet type. */
+    struct ip6_hdr* ip6tr = (struct ip6_hdr *) iptr;
 
-    if(options.netfilter == 0) { 
+    memset(&ap, '\0', sizeof(ap));
+
+    if( (IP_V(iptr) ==4 && options.netfilter == 0)
+            || (IP_V(iptr) == 6 && options.netfilter6 == 0) ) { 
         /*
          * Net filter is off, so assign direction based on MAC address
          */
@@ -179,22 +256,50 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
             assign_addr_pair(&ap, iptr, 1);
             direction = 0;
         }
-
-        /*
-         * This packet is not from or to this interface, or the h/ware 
-         * layer did not give the direction away.  Therefore assume
-         * it was picked up in promisc mode, and account it as incoming.
+        /* Packet direction is not given away by h/ware layer.  Try IP
+         * layer
          */
-        else if(iptr->ip_src.s_addr < iptr->ip_dst.s_addr) {
+        else if((IP_V(iptr) == 4) && have_ip_addr && ip_addr_match(iptr->ip_src)) {
+            /* outgoing */
+            assign_addr_pair(&ap, iptr, 0);
+            direction = 1;
+        }
+        else if((IP_V(iptr) == 4) && have_ip_addr && ip_addr_match(iptr->ip_dst)) {
+            /* incoming */
             assign_addr_pair(&ap, iptr, 1);
             direction = 0;
         }
-        else {
+        else if((IP_V(iptr) == 6) && have_ip6_addr && ip6_addr_match(&ip6tr->ip6_src)) {
+            /* outgoing */
+            assign_addr_pair(&ap, iptr, 0);
+            direction = 1;
+        }
+        else if((IP_V(iptr) == 6) && have_ip6_addr && ip6_addr_match(&ip6tr->ip6_dst)) {
+            /* incoming */
+            assign_addr_pair(&ap, iptr, 1);
+            direction = 0;
+        }
+        /*
+         * Cannot determine direction from hardware or IP levels.  Therefore 
+         * assume that it was a packet between two other machines, assign
+         * source and dest arbitrarily (by numerical value) and account as 
+         * incoming.
+         */
+	else if (options.promiscuous_but_choosy) {
+	    return;		/* junk it */
+	}
+        else if((IP_V(iptr) == 4) && (iptr->ip_src.s_addr < iptr->ip_dst.s_addr)) {
+            assign_addr_pair(&ap, iptr, 1);
+            direction = 0;
+        }
+        else if(IP_V(iptr) == 4) {
             assign_addr_pair(&ap, iptr, 0);
             direction = 0;
         }
+        /* Drop other uncertain packages. */
     }
-    else {
+
+    if(IP_V(iptr) == 4 && options.netfilter != 0) {
         /* 
          * Net filter on, assign direction according to netmask 
          */ 
@@ -214,22 +319,96 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
         }
     }
 
-    ap.protocol = iptr->ip_p;
+    if(IP_V(iptr) == 6 && options.netfilter6 != 0) {
+        /*
+         * Net filter IPv6 active.
+         */
+        int j;
+        //else if((IP_V(iptr) == 6) && have_ip6_addr && ip6_addr_match(&ip6tr->ip6_dst)) {
+        /* First reduce the participating addresses using the netfilter prefix.
+         * We need scratch pads to do this.
+         */
+        for (j=0; j < 4; ++j) {
+            scribdst.s6_addr32[j] = ip6tr->ip6_dst.s6_addr32[j]
+                                        & options.netfilter6mask.s6_addr32[j];
+            scribsrc.s6_addr32[j] = ip6tr->ip6_src.s6_addr32[j]
+                                        & options.netfilter6mask.s6_addr32[j];
+        }
 
-    /* Add the addresses to be resolved */
-    resolve(&iptr->ip_dst, NULL, 0);
-    resolve(&iptr->ip_src, NULL, 0);
+        /* Now look for any hits. */
+        //if(in_filter_net(iptr->ip_src) && !in_filter_net(iptr->ip_dst)) {
+        if (IN6_ARE_ADDR_EQUAL(&scribsrc, &options.netfilter6net)
+                && ! IN6_ARE_ADDR_EQUAL(&scribdst, &options.netfilter6net)) {
+            /* out of network */
+            assign_addr_pair(&ap, iptr, 0);
+            direction = 1;
+        }
+        //else if(in_filter_net(iptr->ip_dst) && !in_filter_net(iptr->ip_src)) {
+        else if (! IN6_ARE_ADDR_EQUAL(&scribsrc, &options.netfilter6net)
+                    && IN6_ARE_ADDR_EQUAL(&scribdst, &options.netfilter6net)) {
+            /* into network */
+            assign_addr_pair(&ap, iptr, 1);
+            direction = 0;
+        }
+        else {
+            /* drop packet */
+            return ;
+        }
+    }
 
-    if(hash_find(history, &ap, (void**)&ht) == HASH_STATUS_KEY_NOT_FOUND) {
+#if 1
+    /* Test if link-local IPv6 packets should be dropped. */
+    if( IP_V(iptr) == 6 && !options.link_local
+            && (IN6_IS_ADDR_LINKLOCAL(&ip6tr->ip6_dst)
+                || IN6_IS_ADDR_LINKLOCAL(&ip6tr->ip6_src)) )
+        return;
+#endif
+
+    /* Do address resolving. */
+    switch (IP_V(iptr)) {
+      case 4:
+          ap.protocol = iptr->ip_p;
+          /* Add the addresses to be resolved */
+          /* The IPv4 address is embedded in a in6_addr structure,
+           * so it need be copied, and delivered to resolve(). */
+          memset(&scribdst, '\0', sizeof(scribdst));
+          memcpy(&scribdst, &iptr->ip_dst, sizeof(struct in_addr));
+          resolve(ap.af, &scribdst, NULL, 0);
+          memset(&scribsrc, '\0', sizeof(scribsrc));
+          memcpy(&scribsrc, &iptr->ip_src, sizeof(struct in_addr));
+          resolve(ap.af, &scribsrc, NULL, 0);
+          break;
+      case 6:
+          ap.protocol = ip6tr->ip6_nxt;
+          /* Add the addresses to be resolved */
+          resolve(ap.af, &ip6tr->ip6_dst, NULL, 0);
+          resolve(ap.af, &ip6tr->ip6_src, NULL, 0);
+      default:
+          break;
+    }
+
+
+    if(hash_find(history, &ap, u_ht.void_pp) == HASH_STATUS_KEY_NOT_FOUND) {
         ht = history_create();
         hash_insert(history, &ap, ht);
     }
 
-    len = ntohs(iptr->ip_len);
+    /* Do accounting. */
+    switch (IP_V(iptr)) {
+      case 4:
+          len = ntohs(iptr->ip_len);
+          break;
+      case 6:
+          len = ntohs(ip6tr->ip6_plen) + 40;
+      default:
+          break;
+    }
 
     /* Update record */
     ht->last_write = history_pos;
-    if(iptr->ip_src.s_addr == ap.src.s_addr) {
+    if( ((IP_V(iptr) == 4) && (iptr->ip_src.s_addr == ap.src.s_addr))
+       || ((IP_V(iptr) == 6) && !memcmp(&ip6tr->ip6_src, &ap.src6, sizeof(ap.src6))) )
+    {
         ht->sent[history_pos] += len;
         ht->total_sent += len;
     }
@@ -240,11 +419,11 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
 
     if(direction == 0) {
         /* incoming */
-        history_totals.recv[history_pos] += ntohs(iptr->ip_len);
+        history_totals.recv[history_pos] += len;
         history_totals.total_recv += len;
     }
     else {
-        history_totals.sent[history_pos] += ntohs(iptr->ip_len);
+        history_totals.sent[history_pos] += len;
         history_totals.total_sent += len;
     }
     
@@ -253,6 +432,100 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
 static void handle_raw_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
 {
     handle_ip_packet((struct ip*)packet, -1);
+}
+
+#ifdef DLT_PFLOG
+static void handle_pflog_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+	register u_int length = pkthdr->len;
+	u_int hdrlen;
+	const struct pfloghdr *hdr;
+	
+	hdr = (struct pfloghdr *)packet;
+	hdrlen = BPF_WORDALIGN(hdr->length);
+	length -= hdrlen;
+	packet += hdrlen;
+	handle_ip_packet((struct ip*)packet, length);
+}
+#endif
+
+static void handle_llc_packet(const struct llc* llc, int dir) {
+
+    struct ip* ip = (struct ip*)((void*)llc + sizeof(struct llc));
+
+    /* Taken from tcpdump/print-llc.c */
+    if(llc->ssap == LLCSAP_SNAP && llc->dsap == LLCSAP_SNAP
+       && llc->llcui == LLC_UI) {
+        u_int32_t orgcode;
+        register u_short et;
+        orgcode = EXTRACT_24BITS(&llc->llc_orgcode[0]);
+        et = EXTRACT_16BITS(&llc->llc_ethertype[0]);
+        switch(orgcode) {
+          case OUI_ENCAP_ETHER:
+          case OUI_CISCO_90:
+            handle_ip_packet(ip, dir);
+            break;
+          case OUI_APPLETALK:
+            if(et == ETHERTYPE_ATALK) {
+              handle_ip_packet(ip, dir);
+            }
+            break;
+          default:;
+            /* Not a lot we can do */
+        }
+    }
+}
+
+static void handle_tokenring_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+    struct token_header *trp;
+    int dir = -1;
+    trp = (struct token_header *)packet;
+
+    if(IS_SOURCE_ROUTED(trp)) {
+      packet += RIF_LENGTH(trp);
+    }
+    packet += TOKEN_HDRLEN;
+
+    if(memcmp(trp->token_shost, if_hw_addr, 6) == 0 ) {
+      /* packet leaving this i/f */
+      dir = 1;
+    } 
+        else if(memcmp(trp->token_dhost, if_hw_addr, 6) == 0 || memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", trp->token_dhost, 6) == 0) {
+      /* packet entering this i/f */
+      dir = 0;
+    }
+
+    /* Only know how to deal with LLC encapsulated packets */
+    if(FRAME_TYPE(trp) == TOKEN_FC_LLC) {
+      handle_llc_packet((struct llc*)packet, dir);
+    }
+}
+
+static void handle_ppp_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+	register u_int length = pkthdr->len;
+	register u_int caplen = pkthdr->caplen;
+	u_int proto;
+
+	if (caplen < 2) 
+        return;
+
+	if(packet[0] == PPP_ADDRESS) {
+		if (caplen < 4) 
+            return;
+
+		packet += 2;
+		length -= 2;
+
+		proto = EXTRACT_16BITS(packet);
+		packet += 2;
+		length -= 2;
+
+        if(proto == PPP_IP || proto == ETHERTYPE_IP || proto == ETHERTYPE_IPV6) {
+            handle_ip_packet((struct ip*)packet, -1);
+        }
+    }
 }
 
 #ifdef DLT_LINUX_SLL
@@ -280,30 +553,69 @@ static void handle_cooked_packet(unsigned char *args, const struct pcap_pkthdr *
 static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
 {
     struct ether_header *eptr;
+    int ether_type;
+    const unsigned char *payload;
     eptr = (struct ether_header*)packet;
-       
+    ether_type = ntohs(eptr->ether_type);
+    payload = packet + sizeof(struct ether_header);
+
     tick(0);
-    
-    if(ntohs(eptr->ether_type) == ETHERTYPE_IP) {
+
+    if(ether_type == ETHERTYPE_8021Q) {
+	struct vlan_8021q_header* vptr;
+	vptr = (struct vlan_8021q_header*)payload;
+	ether_type = ntohs(vptr->ether_type);
+        payload += sizeof(struct vlan_8021q_header);
+    }
+
+    if(ether_type == ETHERTYPE_IP || ether_type == ETHERTYPE_IPV6) {
         struct ip* iptr;
         int dir = -1;
         
         /*
          * Is a direction implied by the MAC addresses?
          */
-        if(memcmp(eptr->ether_shost, if_hw_addr, 6) == 0 ) {
+        if(have_hw_addr && memcmp(eptr->ether_shost, if_hw_addr, 6) == 0 ) {
             /* packet leaving this i/f */
             dir = 1;
-        } 
-        else if(memcmp(eptr->ether_dhost, if_hw_addr, 6) == 0 || memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", eptr->ether_dhost, 6) == 0) {
-            /* packet entering this i/f */
+        }
+        else if(have_hw_addr && memcmp(eptr->ether_dhost, if_hw_addr, 6) == 0 ) {
+	    /* packet entering this i/f */
+	    dir = 0;
+	}
+	else if (memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", eptr->ether_dhost, 6) == 0) {
+	  /* broadcast packet, count as incoming */
             dir = 0;
         }
 
-        iptr = (struct ip*)(packet + sizeof(struct ether_header) ); /* alignment? */
+        /* Distinguishing ip_hdr and ip6_hdr will be done later. */
+        iptr = (struct ip*)(payload); /* alignment? */
         handle_ip_packet(iptr, dir);
     }
 }
+
+
+/* set_filter_code:
+ * Install some filter code. Returns NULL on success or an error message on
+ * failure. */
+char *set_filter_code(const char *filter) {
+    char *x;
+    if (filter) {
+        x = xmalloc(strlen(filter) + sizeof "() and (ip or ip6)");
+        sprintf(x, "(%s) and (ip or ip6)", filter);
+    } else
+        x = xstrdup("ip or ip6");
+    if (pcap_compile(pd, &pcap_filter, x, 1, 0) == -1) {
+        xfree(x);
+        return pcap_geterr(pd);
+    }
+    xfree(x);
+    if (pcap_setfilter(pd, &pcap_filter) == -1)
+        return pcap_geterr(pd);
+    else
+        return NULL;
+}
+
 
 
 /*
@@ -313,35 +625,50 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
  */
 void packet_init() {
     char errbuf[PCAP_ERRBUF_SIZE];
-    char* str = "ip";
-    struct bpf_program F;
+    char *m;
     int s;
-    struct ifreq ifr = {0};
+    int i;
     int dlt;
+    int result;
 
-    /* First, get the address of the interface. If it isn't an ethernet
-     * interface whose address we can obtain, there's not a lot we can do. */
-    s = socket(PF_INET, SOCK_DGRAM, 0); /* any sort of IP socket will do */
-    if (s == -1) {
-        perror("socket");
-        exit(1);
+#ifdef HAVE_DLPI
+    result = get_addrs_dlpi(options.interface, if_hw_addr, &if_ip_addr);
+#else
+    result = get_addrs_ioctl(options.interface, if_hw_addr,
+          &if_ip_addr, &if_ip6_addr);
+#endif
+
+    if (result < 0) {
+      exit(1);
     }
-    strncpy(ifr.ifr_name, options.interface, IFNAMSIZ);
-    ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
-    if (ioctl(s, SIOCGIFHWADDR, &ifr) == -1) {
-        perror("ioctl(SIOCGIFHWADDR)");
-        exit(1);
-    }
-    close(s);
-    memcpy(if_hw_addr, ifr.ifr_hwaddr.sa_data, 6);
-    fprintf(stderr, "MAC address is:");
-    for (s = 0; s < 6; ++s)
-        fprintf(stderr, "%c%02x", s ? ':' : ' ', (unsigned int)if_hw_addr[s]);
-    fprintf(stderr, "\n");
+
+    have_hw_addr = result & 0x01;
+    have_ip_addr = result & 0x02;
+    have_ip6_addr = result & 0x04;
     
+    if(have_ip_addr) {
+      fprintf(stderr, "IP address is: %s\n", inet_ntoa(if_ip_addr));
+    }
+    if(have_ip6_addr) {
+       char ip6str[INET6_ADDRSTRLEN];
+
+       ip6str[0] = '\0';
+       inet_ntop(AF_INET6, &if_ip6_addr, ip6str, sizeof(ip6str));
+       fprintf(stderr, "IPv6 address is: %s\n", ip6str);
+    }
+
+    if(have_hw_addr) {
+      fprintf(stderr, "MAC address is:");
+      for (i = 0; i < 6; ++i)
+	fprintf(stderr, "%c%02x", i ? ':' : ' ', (unsigned int)if_hw_addr[i]);
+      fprintf(stderr, "\n");
+    }
+    
+    //    exit(0);
     resolver_initialise();
 
     pd = pcap_open_live(options.interface, CAPTURE_LENGTH, options.promiscuous, 1000, errbuf);
+    // DEBUG: pd = pcap_open_offline("tcpdump.out", errbuf);
     if(pd == NULL) { 
         fprintf(stderr, "pcap_open_live(%s): %s\n", options.interface, errbuf); 
         exit(1);
@@ -350,9 +677,20 @@ void packet_init() {
     if(dlt == DLT_EN10MB) {
         packet_handler = handle_eth_packet;
     }
-    else if(dlt == DLT_RAW) {
+#ifdef DLT_PFLOG
+    else if (dlt == DLT_PFLOG) {
+		packet_handler = handle_pflog_packet;
+    }
+#endif
+    else if(dlt == DLT_RAW || dlt == DLT_NULL) {
         packet_handler = handle_raw_packet;
     } 
+    else if(dlt == DLT_IEEE802) {
+        packet_handler = handle_tokenring_packet;
+    }
+    else if(dlt == DLT_PPP) {
+        packet_handler = handle_ppp_packet;
+    }
 /* 
  * SLL support not available in older libpcaps
  */
@@ -368,29 +706,17 @@ void packet_init() {
         exit(1);
     }
 
-    if (options.filtercode) {
-        str = xmalloc(strlen(options.filtercode) + sizeof "() and ip");
-        sprintf(str, "(%s) and ip", options.filtercode);
-    }
-    if (pcap_compile(pd, &F, str, 1, 0) == -1) {
-        fprintf(stderr, "pcap_compile(%s): %s\n", str, pcap_geterr(pd));
+    if ((m = set_filter_code(options.filtercode))) {
+        fprintf(stderr, "set_filter_code: %s\n", m);
         exit(1);
         return;
     }
-    if (pcap_setfilter(pd, &F) == -1) {
-        fprintf(stderr, "pcap_setfilter: %s\n", pcap_geterr(pd));
-        exit(1);
-        return;
-    }
-    if (options.filtercode)
-        xfree(str);
-
 }
 
 /* packet_loop:
  * Worker function for packet capture thread. */
 void packet_loop(void* ptr) {
-    pcap_loop(pd,0,(pcap_handler)packet_handler,NULL);
+    pcap_loop(pd,-1,(pcap_handler)packet_handler,NULL);
 }
 
 
@@ -398,9 +724,16 @@ void packet_loop(void* ptr) {
  * Entry point. See usage(). */
 int main(int argc, char **argv) {
     pthread_t thread;
-    struct sigaction sa = {0};
+    struct sigaction sa = {};
 
-    options_read(argc, argv);
+    /* TODO: tidy this up */
+    /* read command line options and config file */   
+    config_init();
+    options_set_defaults();
+    options_read_args(argc, argv);
+    /* If a config was explicitly specified, whinge if it can't be found */
+    read_config(options.config_file, options.config_file_specified);
+    options_make();
     
     sa.sa_handler = finish;
     sigaction(SIGINT, &sa, NULL);
