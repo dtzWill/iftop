@@ -7,7 +7,7 @@ dnl things and even once you have you find yourself testing for more and more
 dnl special cases. But that's OK. Paul is going to maintain it :)
 dnl     -- Chris Lightfoot
 dnl
-dnl $Id: configure.in,v 1.29 2010/11/27 11:39:32 pdw Exp $
+dnl $Id: configure.in,v 1.33 2011/10/03 21:55:33 pdw Exp $
 dnl
 dnl To regenerate everything from source, do:
 dnl    autoheader
@@ -29,7 +29,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(iftop, "1.0pre1")
+AM_INIT_AUTOMAKE(iftop, "1.0pre2")
 
 AC_DEFINE_UNQUOTED(IFTOP_VERSION, "$VERSION", [The iftop version number])
 
@@ -352,7 +352,7 @@ dnl
 
 AC_MSG_CHECKING([for a curses library containing mvchgat])
 oldLIBS=$LIBS
-for curseslib in curses ncurses ; do
+for curseslib in ncursesw curses ncurses ; do
     LIBS="$oldLIBS -l$curseslib"
     AC_TRY_LINK([
 #include <curses.h>

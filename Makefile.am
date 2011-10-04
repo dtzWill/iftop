@@ -7,10 +7,11 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.10 2007/03/03 16:01:47 pdw Exp $
+# $Id: Makefile.am,v 1.11 2010/11/27 17:19:25 pdw Exp $
 #
 
-sbin_PROGRAMS = iftop iftop-dump
+sbin_PROGRAMS = iftop 
+#iftop-dump
 
 iftop_SOURCES = addr_hash.c edline.c hash.c iftop.c ns_hash.c \
                  options.c resolver.c screenfilter.c serv_hash.c \
@@ -18,11 +19,11 @@ iftop_SOURCES = addr_hash.c edline.c hash.c iftop.c ns_hash.c \
 		 addrs_ioctl.c addrs_dlpi.c dlcommon.c \
 		 stringmap.c cfgfile.c vector.c
 
-iftop_dump_SOURCES = counter_hash.c hash.c iftop-dump.c  \
-                 options.c \
-                 util.c \
-		 addrs_ioctl.c addrs_dlpi.c dlcommon.c \
-		 stringmap.c cfgfile.c 
+#iftop_dump_SOURCES = counter_hash.c hash.c iftop-dump.c  \
+#                 options.c \
+#                 util.c \
+#		 addrs_ioctl.c addrs_dlpi.c dlcommon.c \
+#		 stringmap.c cfgfile.c 
 
 
 

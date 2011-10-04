@@ -2,6 +2,9 @@ IFTOP(8)                                                              IFTOP(8)
 
 
 
+-e .pl 1100i
+
+
 NNAAMMEE
        iftop - display bandwidth usage on an interface by host
 
@@ -322,6 +325,7 @@ CCOOPPYYIINNGG
        with this program; if not, write to the Free Software Foundation, Inc.,
        675 Mass Ave, Cambridge, MA 02139, USA.
 
+       (nlu+10
 
 
 

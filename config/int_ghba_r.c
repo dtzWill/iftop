@@ -4,8 +4,9 @@
  * int.
  */
 
-static const char rcsid[] = "$Id: int_ghba_r.c,v 1.1 2002/11/04 12:27:35 chris Exp $";
+static const char rcsid[] = "$Id: int_ghba_r.c,v 1.4 2011/10/03 18:19:13 pdw Exp $";
 
+#include <sys/socket.h>
 #include <sys/types.h>
 
 #include <errno.h>

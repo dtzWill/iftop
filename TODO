@@ -1,5 +1,9 @@
 Things to do for iftop
-$Id: TODO,v 1.26 2003/10/20 21:41:53 pdw Exp $
+$Id: TODO,v 1.27 2011/10/03 18:17:35 pdw Exp $
+
+* Revert old FreeBSD patch, install new one
+
+* Re-fix import order for Mac OS X
 
 * Add configurable offset for DLT_RAW
 

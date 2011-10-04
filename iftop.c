@@ -5,13 +5,6 @@
 
 #include "integers.h"
 
-#if defined(HAVE_PCAP_H)
-#   include <pcap.h>
-#elif defined(HAVE_PCAP_PCAP_H)
-#   include <pcap/pcap.h>
-#else
-#   error No pcap.h
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -19,13 +12,22 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
-#include <net/bpf.h>
+/* include <net/bpf.h> -- this was added by the PFLOG patch but seems
+ * superfluous and breaks on Slackware */
+#if defined(HAVE_PCAP_H)
+#   include <pcap.h>
+#elif defined(HAVE_PCAP_PCAP_H)
+#   include <pcap/pcap.h>
+#else
+#   error No pcap.h
+#endif
 
 #include <pthread.h>
 #include <curses.h>
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <locale.h>
 
 #include "iftop.h"
 #include "addr_hash.h"
@@ -80,9 +82,14 @@ static void finish(int sig) {
 
 
 
-/* Only need ethernet (plus optional 4 byte VLAN) and IP headers (48) + first 2 bytes of tcp/udp header */
+/* Only need ethernet (plus optional 4 byte VLAN) and IP headers (48) + first 2
+ * bytes of tcp/udp header */
 /* Increase with a further 20 to account for IPv6 header length.  */
-#define CAPTURE_LENGTH 92
+/* IEEE 802.11 radiotap throws in a variable length header plus 8 (radiotap
+ * header header) plus 34 (802.11 MAC) plus 40 (IPv6) = 78, plus whatever's in
+ * the radiotap payload */
+/*#define CAPTURE_LENGTH 92 */
+#define CAPTURE_LENGTH 256
 
 void init_history() {
     history = addr_hash_create();
@@ -229,8 +236,8 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
     int direction = 0; /* incoming */
     history_type* ht;
     union {
-	history_type **ht_pp;
-	void **void_pp;
+      history_type **ht_pp;
+      void **void_pp;
     } u_ht = { &ht };
     addr_pair ap;
     unsigned int len = 0;
@@ -328,11 +335,11 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
         /* First reduce the participating addresses using the netfilter prefix.
          * We need scratch pads to do this.
          */
-        for (j=0; j < 4; ++j) {
-            scribdst.s6_addr32[j] = ip6tr->ip6_dst.s6_addr32[j]
-                                        & options.netfilter6mask.s6_addr32[j];
-            scribsrc.s6_addr32[j] = ip6tr->ip6_src.s6_addr32[j]
-                                        & options.netfilter6mask.s6_addr32[j];
+        for (j=0; j < 16; ++j) {
+            scribdst.s6_addr[j] = ip6tr->ip6_dst.s6_addr[j]
+                                        & options.netfilter6mask.s6_addr[j];
+            scribsrc.s6_addr[j] = ip6tr->ip6_src.s6_addr[j]
+                                        & options.netfilter6mask.s6_addr[j];
         }
 
         /* Now look for any hits. */
@@ -445,9 +452,14 @@ static void handle_pflog_packet(unsigned char* args, const struct pcap_pkthdr* p
 	hdrlen = BPF_WORDALIGN(hdr->length);
 	length -= hdrlen;
 	packet += hdrlen;
-	handle_ip_packet((struct ip*)packet, length);
+	handle_ip_packet((struct ip*)packet, -1);
 }
 #endif
+
+static void handle_null_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+    handle_ip_packet((struct ip*)(packet + 4), -1);
+}
 
 static void handle_llc_packet(const struct llc* llc, int dir) {
 
@@ -594,6 +606,20 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
     }
 }
 
+#ifdef DLT_IEEE802_11_RADIO
+/*
+ * Packets with a bonus radiotap header.
+ * See http://www.gsp.com/cgi-bin/man.cgi?section=9&topic=ieee80211_radiotap
+ */
+static void handle_radiotap_packet(unsigned char* args, const struct pcap_pkthdr* pkthdr, const unsigned char* packet)
+{
+    /* 802.11 MAC header is = 34 bytes (not sure if that's universally true) */
+    /* We could try harder to figure out hardware direction from the MAC header */
+    handle_ip_packet((struct ip*)(packet + ((struct radiotap_header *)packet)->it_len + 34),-1);
+}
+
+
+#endif
 
 /* set_filter_code:
  * Install some filter code. Returns NULL on success or an error message on
@@ -682,9 +708,22 @@ void packet_init() {
 		packet_handler = handle_pflog_packet;
     }
 #endif
-    else if(dlt == DLT_RAW || dlt == DLT_NULL) {
+    else if(dlt == DLT_RAW) {
         packet_handler = handle_raw_packet;
     } 
+    else if(dlt == DLT_NULL) {
+        packet_handler = handle_null_packet;
+    } 
+#ifdef DLT_LOOP
+    else if(dlt == DLT_LOOP) {
+        packet_handler = handle_null_packet;
+    }
+#endif
+#ifdef DLT_IEEE802_11_RADIO
+    else if(dlt == DLT_IEEE802_11_RADIO) {
+        packet_handler = handle_radiotap_packet;
+    }
+#endif
     else if(dlt == DLT_IEEE802) {
         packet_handler = handle_tokenring_packet;
     }
@@ -725,6 +764,8 @@ void packet_loop(void* ptr) {
 int main(int argc, char **argv) {
     pthread_t thread;
     struct sigaction sa = {};
+
+    setlocale(LC_ALL, "");
 
     /* TODO: tidy this up */
     /* read command line options and config file */   
