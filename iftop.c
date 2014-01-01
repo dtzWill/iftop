@@ -32,7 +32,9 @@
 #include "iftop.h"
 #include "addr_hash.h"
 #include "resolver.h"
+#include "ui_common.h"
 #include "ui.h"
+#include "tui.h"
 #include "options.h"
 #ifdef DLT_LINUX_SLL
 #include "sll.h"
@@ -65,6 +67,7 @@ extern options_t options;
 hash_type* history;
 history_type history_totals;
 time_t last_timestamp;
+time_t first_timestamp;
 int history_pos = 0;
 int history_len = 1;
 pthread_mutex_t tick_mutex;
@@ -140,14 +143,28 @@ void tick(int print) {
    
     t = time(NULL);
     if(t - last_timestamp >= RESOLUTION) {
-        //printf("TICKING\n");
         analyse_data();
-        ui_print();
+        if (options.no_curses) {
+          if (!options.timed_output || options.timed_output && t - first_timestamp >= options.timed_output) {
+            tui_print();
+            if (options.timed_output) {
+              finish(SIGINT);
+            }
+          }
+        }
+        else {
+          ui_print();
+        }
         history_rotate();
         last_timestamp = t;
     }
     else {
-      ui_tick(print);
+      if (options.no_curses) {
+        tui_tick(print);
+      }
+      else {
+        ui_tick(print);
+      }
     }
 
     pthread_mutex_unlock(&tick_mutex);
@@ -248,6 +265,8 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
 
     memset(&ap, '\0', sizeof(ap));
 
+    tick(0);
+
     if( (IP_V(iptr) ==4 && options.netfilter == 0)
             || (IP_V(iptr) == 6 && options.netfilter6 == 0) ) { 
         /*
@@ -286,6 +305,14 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
             assign_addr_pair(&ap, iptr, 1);
             direction = 0;
         }
+        else if (IP_V(iptr) == 4 && IN_MULTICAST(iptr->ip_dst.s_addr)) {
+            assign_addr_pair(&ap, iptr, 1);
+            direction = 0;
+        }
+        else if (IP_V(iptr) == 6 && IN6_IS_ADDR_MULTICAST(&ip6tr->ip6_dst)) {
+            assign_addr_pair(&ap, iptr, 1);
+            direction = 0;
+        }
         /*
          * Cannot determine direction from hardware or IP levels.  Therefore 
          * assume that it was a packet between two other machines, assign
@@ -304,6 +331,8 @@ static void handle_ip_packet(struct ip* iptr, int hw_dir)
             direction = 0;
         }
         /* Drop other uncertain packages. */
+        else
+            return;
     }
 
     if(IP_V(iptr) == 4 && options.netfilter != 0) {
@@ -571,12 +600,10 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
     ether_type = ntohs(eptr->ether_type);
     payload = packet + sizeof(struct ether_header);
 
-    tick(0);
-
     if(ether_type == ETHERTYPE_8021Q) {
-	struct vlan_8021q_header* vptr;
-	vptr = (struct vlan_8021q_header*)payload;
-	ether_type = ntohs(vptr->ether_type);
+        struct vlan_8021q_header* vptr;
+        vptr = (struct vlan_8021q_header*)payload;
+        ether_type = ntohs(vptr->ether_type);
         payload += sizeof(struct vlan_8021q_header);
     }
 
@@ -592,11 +619,11 @@ static void handle_eth_packet(unsigned char* args, const struct pcap_pkthdr* pkt
             dir = 1;
         }
         else if(have_hw_addr && memcmp(eptr->ether_dhost, if_hw_addr, 6) == 0 ) {
-	    /* packet entering this i/f */
-	    dir = 0;
-	}
-	else if (memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", eptr->ether_dhost, 6) == 0) {
-	  /* broadcast packet, count as incoming */
+            /* packet entering this i/f */
+            dir = 0;
+        }
+        else if (memcmp("\xFF\xFF\xFF\xFF\xFF\xFF", eptr->ether_dhost, 6) == 0) {
+            /* broadcast packet, count as incoming */
             dir = 0;
         }
 
@@ -785,11 +812,31 @@ int main(int argc, char **argv) {
 
     init_history();
 
-    ui_init();
+    if (options.no_curses) {
+      tui_init();
+    }
+    else {
+      ui_init();
+    }
 
     pthread_create(&thread, NULL, (void*)&packet_loop, NULL);
 
-    ui_loop();
+    /* Keep the starting time (used for timed termination) */
+    first_timestamp = time(NULL);
+
+    if (options.no_curses) {
+      if (options.timed_output) {
+        while(!foad) {
+          sleep(1);
+        }
+      }
+      else {
+        tui_loop();
+      }
+    }
+    else {
+      ui_loop();
+    }
 
     pthread_cancel(thread);
 

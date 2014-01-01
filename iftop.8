@@ -3,7 +3,7 @@
 .\" iftop.8:
 .\" Manual page for iftop.
 .\"
-.\" $Id: iftop.8,v 1.27 2010/11/27 11:06:12 pdw Exp $
+.\" $Id: iftop.8,v 1.30 2014/01/01 14:50:05 pdw Exp $
 .\"
 
 .SH NAME
@@ -31,7 +31,7 @@ By default, \fBiftop\fP counts all IP packets that pass through the filter, and
 the direction of the packet is determined according to the direction the packet
 is moving across the interface.  Using the \fB-F\fP option it is possible to
 get \fBiftop\fP to show packets entering and leaving a given network.  For
-example, \fBiftop -F 10.0.0.0/255.0.0.0\fP will analyse packets flowing in and
+example, \fBiftop \-F 10.0.0.0/255.0.0.0\fP will analyse packets flowing in and
 out of the 10.* network.
 
 Some other filter ideas:
@@ -71,6 +71,9 @@ The default is not to display that address category.
 .TP
 \fB-b\fP
 Don't display bar graphs of traffic. 
+.TP
+\fB-m\fP \fIlimit\fP
+Set the upper limit for the bandwidth scale.  Specified as a number with a 'K', 'M' or 'G' suffix.
 .TP
 \fB-B\fP
 Display bandwidth rates in bytes/sec rather than bits/sec.
@@ -113,7 +116,6 @@ instance,
 foo.example.com  =>  bar.example.com      1Kb  500b   100b
                  <=                       2Mb    2Mb    2Mb
 
-.Sp
 .fi
 shows, on the first line, traffic from \fBfoo.example.com\fP to
 \fBbar.example.com\fP; in the preceding 2 seconds, this averaged 1Kbit/s,
@@ -196,7 +198,6 @@ directive is a name value pair, for example:
 
 interface: eth0
 
-.Sp
 .fi
 sets the network interface.  The following config directives are supported:
 
@@ -310,7 +311,7 @@ Configuration file for iftop.
 Paul Warren <pdw@ex-parrot.com>
 
 .SH VERSION
-$Id: iftop.8,v 1.27 2010/11/27 11:06:12 pdw Exp $
+$Id: iftop.8,v 1.30 2014/01/01 14:50:05 pdw Exp $
 
 .SH COPYING
 This program is free software; you can redistribute it and/or modify
@@ -323,7 +324,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 

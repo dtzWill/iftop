@@ -117,6 +117,10 @@ char* do_resolve(struct addr_storage *addr) {
     /* Allocate buffer, remember to free it to avoid memory leakage. */
     tmphstbuf = xmalloc (hstbuflen);
 
+    /* nss-myhostname's gethostbyaddr_r() causes an assertion failure if an
+     * "invalid" (as in outside of IPv4 or IPv6) address family is passed */
+    if (addr->af == AF_INET || addr->af == AF_INET6) {
+
     /* Some machines have gethostbyaddr_r returning an integer error code; on
      * others, it returns a struct hostent*. */
 #ifdef GETHOSTBYADDR_R_RETURNS_INT
@@ -135,6 +139,7 @@ char* do_resolve(struct addr_storage *addr) {
         hstbuflen *= 2;
         tmphstbuf = realloc (tmphstbuf, hstbuflen);
       }
+    }
 
     /*  Check for errors.  */
     if (res || hp == NULL) {
@@ -472,14 +477,14 @@ void resolve(int af, void* addr, char* result, int buflen) {
     int added = 0;
     struct addr_storage *raddr;
 
-    raddr = malloc(sizeof *raddr);
-    memset(raddr, 0, sizeof *raddr);
-    raddr->af = af;
-    raddr->len = (af == AF_INET ? sizeof(struct in_addr)
-                  : sizeof(struct in6_addr));
-    memcpy(&raddr->addr, addr, raddr->len);
-
     if(options.dnsresolution == 1) {
+
+        raddr = malloc(sizeof *raddr);
+        memset(raddr, 0, sizeof *raddr);
+        raddr->af = af;
+        raddr->len = (af == AF_INET ? sizeof(struct in_addr)
+                      : sizeof(struct in6_addr));
+        memcpy(&raddr->addr, addr, raddr->len);
 
         pthread_mutex_lock(&resolver_queue_mutex);
 
