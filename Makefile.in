@@ -23,7 +23,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.12 2014/01/01 14:37:31 pdw Exp $
+# $Id: Makefile.am,v 1.13 2014/01/19 20:11:39 pdw Exp $
 #
 
 
@@ -103,7 +103,7 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/config/config.sub \
 	$(top_srcdir)/config/install-sh $(top_srcdir)/config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.in
+am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -382,7 +382,7 @@ iftop_SOURCES = addr_hash.c edline.c hash.c iftop.c ns_hash.c \
 #                 util.c \
 #		 addrs_ioctl.c addrs_dlpi.c dlcommon.c \
 #		 stringmap.c cfgfile.c 
-noinst_HEADERS = addr_hash.h ether.h ethertype.h extract.h hash.h iftop.h \
+noinst_HEADERS = addr_hash.h addrs_ioctl.h ether.h ethertype.h extract.h hash.h iftop.h \
                  integers.h ip.h llc.h ns_hash.h options.h resolver.h \
                  screenfilter.h serv_hash.h sll.h sorted_list.h tcp.h \
                  threadprof.h token.h ui_common.h ui.h tui.h dlcommon.h stringmap.h \
@@ -391,7 +391,7 @@ noinst_HEADERS = addr_hash.h ether.h ethertype.h extract.h hash.h iftop.h \
 man_MANS = iftop.8
 SUBDIRS = config
 EXTRA_DIST = bootstrap README ChangeLog AUTHORS COPYING INSTALL TODO \
-		Makefile.OLD $(man_MANS) iftop.cat iftop.spec
+		$(man_MANS) iftop.cat iftop.spec
 
 MAINTERCLEANFILES = Makefile.in aclocal.m4 configure configuration.h.in \
                     stamp-h.in iftop.spec
@@ -1012,8 +1012,8 @@ uninstall-man: uninstall-man8
 iftop.cat: iftop.8
 	(echo -e ".pl 1100i" ; cat iftop.8 ; echo ".pl \n(nlu+10") | groff -Tascii -man > iftop.cat
 
-iftop.spec: iftop.spec.in configure.in
-	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
+iftop.spec: iftop.spec.in configure.ac
+	sed 's/__VERSION__/$(PACKAGE_VERSION)/' < iftop.spec.in > iftop.spec
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

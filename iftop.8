@@ -3,7 +3,7 @@
 .\" iftop.8:
 .\" Manual page for iftop.
 .\"
-.\" $Id: iftop.8,v 1.30 2014/01/01 14:50:05 pdw Exp $
+.\" $Id: iftop.8,v 1.31 2014/01/05 17:22:39 pdw Exp $
 .\"
 
 .SH NAME
@@ -100,6 +100,10 @@ bitmasking.
 \fB-c\fP \fIconfig file\fP
 Specifies an alternate config file.  If not specified, iftop will use
 \fB~/.iftoprc\fP if it exists.  See below for a description of config files
+.TP
+\fB-t\fP \fItext output mode\fP
+Use text interface without ncurses and print the output to STDOUT.
+
 
 .SH DISPLAY
 
@@ -311,7 +315,7 @@ Configuration file for iftop.
 Paul Warren <pdw@ex-parrot.com>
 
 .SH VERSION
-$Id: iftop.8,v 1.30 2014/01/01 14:50:05 pdw Exp $
+$Id: iftop.8,v 1.31 2014/01/05 17:22:39 pdw Exp $
 
 .SH COPYING
 This program is free software; you can redistribute it and/or modify

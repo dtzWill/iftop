@@ -3,6 +3,8 @@
  *
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 
 #include <ctype.h>
@@ -49,7 +51,7 @@
 " > - sort by dest name\n"\
 " o - freeze current order\n"\
 "\n"\
-"iftop, version " IFTOP_VERSION 
+"iftop, version " PACKAGE_VERSION
 
 
 extern hash_type* history;
@@ -177,7 +179,7 @@ static void draw_bar_scale(int* y) {
 
 void draw_line_total(float sent, float recv, int y, int x, option_linedisplay_t linedisplay, int bytes) {
     char buf[10];
-    float n;
+    float n = 0;
     switch(linedisplay) {
         case OPTION_LINEDISPLAY_TWO_LINE:
           draw_line_total(sent, recv, y, x, OPTION_LINEDISPLAY_ONE_LINE_SENT, bytes);

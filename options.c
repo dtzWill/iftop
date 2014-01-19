@@ -173,79 +173,6 @@ void options_set_defaults() {
     
 }
 
-static void die(char *msg) {
-    fprintf(stderr, "%s", msg);
-    exit(1);
-}
-
-static void set_max_bandwidth(char* arg) {
-    char* units;
-    long long mult = 1;
-    long long value;
-    units = arg + strspn(arg, "0123456789");
-    if(strlen(units) > 1) {
-        die("Invalid units\n");
-    }
-    if(strlen(units) == 1) {
-        if(*units == 'k' || *units == 'K') {
-            mult = 1024;
-        }
-        else if(*units == 'm' || *units == 'M') {
-            mult = 1024 * 1024;
-        }
-        else if(*units == 'g' || *units == 'G') {
-            mult = 1024 * 1024 * 1024;
-        }
-    }
-    *units = '\0';
-    if(sscanf(arg, "%lld", &value) != 1) {
-        die("Error reading max bandwidth\n");
-    }
-    options.max_bandwidth = value * mult;
-}
-
-static void set_net_filter(char* arg) {
-    char* mask;
-
-    mask = strchr(arg, '/');
-    if (mask == NULL) {
-        die("Could not parse net/mask\n");
-    }
-    *mask = '\0';
-    mask++;
-    if (inet_aton(arg, &options.netfilternet) == 0)
-        die("Invalid network address\n");
-    /* Accept a netmask like /24 or /255.255.255.0. */
-    if (mask[strspn(mask, "0123456789")] == '\0') {
-        /* Whole string is numeric */
-        int n;
-        n = atoi(mask);
-        if (n > 32) {
-            die("Invalid netmask");
-        }
-        else {
-            if(n == 32) {
-              /* This needs to be special cased, although I don't fully 
-               * understand why -pdw 
-               */
-              options.netfiltermask.s_addr = htonl(0xffffffffl);
-            }
-            else {
-              u_int32_t mm = 0xffffffffl;
-              mm >>= n;
-              options.netfiltermask.s_addr = htonl(~mm);
-            }
-        }
-    } 
-    else if (inet_aton(mask, &options.netfiltermask) == 0) {
-        die("Invalid netmask\n");
-    }
-    options.netfilternet.s_addr = options.netfilternet.s_addr & options.netfiltermask.s_addr;
-
-    options.netfilter = 1;
-
-}
-
 /* usage:
  * Print usage information. */
 static void usage(FILE *fp) {
@@ -284,7 +211,7 @@ static void usage(FILE *fp) {
 "   -s num              print one single text output afer num seconds, then quit\n"
 "   -L num              number of lines to print\n"
 "\n"
-"iftop, version " IFTOP_VERSION "\n"
+"iftop, version " PACKAGE_VERSION "\n"
 "copyright (c) 2002 Paul Warren <pdw@ex-parrot.com> and contributors\n"
             );
 }

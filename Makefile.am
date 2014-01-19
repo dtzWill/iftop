@@ -7,7 +7,7 @@
 # it.
 #   -- Chris Lightfoot
 #
-# $Id: Makefile.am,v 1.12 2014/01/01 14:37:31 pdw Exp $
+# $Id: Makefile.am,v 1.13 2014/01/19 20:11:39 pdw Exp $
 #
 
 sbin_PROGRAMS = iftop 
@@ -41,7 +41,7 @@ iftop.cat: iftop.8
 	(echo -e ".pl 1100i" ; cat iftop.8 ; echo ".pl \n(nlu+10") | groff -Tascii -man > iftop.cat
 
 iftop.spec: iftop.spec.in configure.in
-	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
+	sed 's/__VERSION__/$(PACKAGE_VERSION)/' < iftop.spec.in > iftop.spec
 
 ## These need to be distributed along with configure:
 
