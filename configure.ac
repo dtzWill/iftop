@@ -162,6 +162,18 @@ dnl name resolution. Naturally, UNIX vendors have come up with a variety of
 dnl incompatible schemes for this, many of which don't work at all.
 dnl
 
+
+AC_SEARCH_LIBS([getnameinfo], [nsl resolv])
+AC_SEARCH_LIBS([getifaddrs], [nsl resolv])
+AC_CHECK_FUNCS([ \
+  getifaddrs \
+  getnameinfo \
+])
+
+if test "x$ac_cv_func_getifaddrs" = "xyes"; then
+  AC_DEFINE(USE_GETIFADDRS, 1, [use getifaddrs])
+fi
+
 dnl First, the default resolver, which uses getnameinfo or gethostbyaddr_r. If
 dnl not available, we fall back to gethostbyaddr. We could fall back to ARES,
 dnl but that's probably not available on typical machines.
@@ -172,19 +184,12 @@ dnl experiments we've done so far, or "guess" if we have no idea.
 specified_resolver=$resolver
 if test x$specified_resolver = xguess ; then
     dnl Best possibility is getnameinfo.
-    use_getnameinfo=0
-    AC_SEARCH_LIBS(getnameinfo, [nsl], [use_getnameinfo=1])
-
-    dnl XXX For the moment, don't use getnameinfo, since it isn't actually
-    dnl thread safe on, e.g., NetBSD.
-    #use_getnameinfo=0
-
-    if test $use_getnameinfo = 1 ; then
-        dnl Done.
-        AC_DEFINE(USE_GETNAMEINFO, 1, [use getnameinfo for name resolution])
+    if test "x$ac_cv_func_getnameinfo" = "xyes"; then
+      AC_DEFINE(USE_GETNAMEINFO, 1, [use getnameinfo for name resolution])
+      resolver=getnameinfo # not guess
     else
-	dnl Best hope is netdb, which presently means gethostbyaddr_r.
-	resolver=netdb
+      dnl Best hope is netdb, which presently means gethostbyaddr_r.
+      resolver=netdb
     fi
 fi
 
