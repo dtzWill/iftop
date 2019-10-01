@@ -18,6 +18,9 @@
 #include <net/if.h>
 #include <netinet/in.h>
 
+// Include before checking USE_GETIFADDRS
+#include "config.h"
+
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__ \
       || ( defined __GLIBC__ && ! defined __linux__ )
 #include <sys/param.h>
