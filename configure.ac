@@ -177,7 +177,7 @@ if test x$specified_resolver = xguess ; then
 
     dnl XXX For the moment, don't use getnameinfo, since it isn't actually
     dnl thread safe on, e.g., NetBSD.
-    use_getnameinfo=0
+    #use_getnameinfo=0
 
     if test $use_getnameinfo = 1 ; then
         dnl Done.
