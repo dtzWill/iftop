@@ -172,6 +172,7 @@ AC_CHECK_FUNCS([ \
 
 if test "x$ac_cv_func_getifaddrs" = "xyes"; then
   AC_DEFINE(USE_GETIFADDRS, 1, [use getifaddrs])
+  AC_MSG_NOTICE([getifaddrs found, using (setting USE_GETIFADDRS=1)])
 fi
 
 dnl First, the default resolver, which uses getnameinfo or gethostbyaddr_r. If
@@ -187,6 +188,7 @@ if test x$specified_resolver = xguess ; then
     if test "x$ac_cv_func_getnameinfo" = "xyes"; then
       AC_DEFINE(USE_GETNAMEINFO, 1, [use getnameinfo for name resolution])
       resolver=getnameinfo # not guess
+      AC_MSG_NOTICE([getnameinfo found, using for name resolution (setting USE_GETNAMEINFO=1)])
     else
       dnl Best hope is netdb, which presently means gethostbyaddr_r.
       resolver=netdb
